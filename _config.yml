@@ -1,13 +1,13 @@
-title: Just the Docs Template
-description: A starter template for a Jeykll site using the Just the Docs theme!
+title: Habezai's Personal Website
+description: A Personal Website for Habezai!
 theme: just-the-docs
 
-url: https://just-the-docs.github.io
+url: https://habezai.github.io
 
 aux_links:
-  "GitHub源码":
+  "本项目源码":
     - "https://github.com/habezai/habezai.github.io"  
-    - "fab fa-github"  
   "在线演示":
-    - "https://demo.example.com"
-    - "fas fa-rocket"
+    - "https://github.com/habezai"  
+  "个人GitHub":
+    - "https://github.com/habezai"  
