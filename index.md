@@ -3,7 +3,12 @@ title: 首页
 layout: home
 ---
 
+# 北壹先生的知识农场
+{: .no_toc }
+
 ## Table of contents
+{: .no_toc .text-delta }
+
 1. TOC
 {:toc}
 
