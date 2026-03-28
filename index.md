@@ -131,8 +131,6 @@ RSA PKCS1-vPSS RSASP1 (FIPS 186-4),
 RSADP Decryption (SP 800-56B; PKCS#1 v2.1)
 [test-vector-Component-Testing]
 
----
-
 [FIPS-197-upd1]:https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf
 [SP800-38d]:https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf
 [SP800-38e]:https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38e.pdf
