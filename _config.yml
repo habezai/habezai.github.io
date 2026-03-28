@@ -62,5 +62,9 @@ search:
 enable_copy_code_button: true #在代码块右上角显示“复制”按钮，极大提升用户体验。建议保持开启。
 
 # 是否全局启用侧边栏菜单
-# 中文：在页面变量或最小布局中也可以选择性启用或禁用导航菜单
+# 在页面变量或最小布局中也可以选择性启用或禁用导航菜单
 nav_enabled: true
+
+# 导航链接的排序顺序
+# nav_sort: case_insensitive # default, equivalent to nil
+nav_sort: case_sensitive # Capital letters sorted before lowercase
