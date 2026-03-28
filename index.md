@@ -10,7 +10,7 @@ layout: home
 - 静态分析
 - 模块化自测验证
 - Bug定位
-- [AI协助解决问题](/docs/Experience/AI-tips-in-work.md)
+- [AI协助解决问题](/docs/Experience/AI-tips-in-work)
 
 # [工具分享](/docs/Tools/)
 - [Vim](/docs/Tools/vim.md)
