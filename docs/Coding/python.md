@@ -1,6 +1,6 @@
 ---
 title: Python Notes
-parent: Coding Notes
+parent: Coding
 ---
 
 Python 笔记

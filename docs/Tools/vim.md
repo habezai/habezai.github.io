@@ -1,6 +1,6 @@
 ---
 title: Vim Notes
-parent: Tool Notes
+parent: Tools
 ---
 
 VIM 笔记

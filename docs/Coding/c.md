@@ -1,6 +1,6 @@
 ---
 title: C Notes
-parent: Coding Notes
+parent: Coding
 ---
 
 C 笔记

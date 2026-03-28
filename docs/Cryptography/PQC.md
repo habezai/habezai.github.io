@@ -1,6 +1,6 @@
 ---
 title: PQC Notes
-parent: Cryptography Notes
+parent: Cryptography
 ---
 
 后量子密码学 笔记
