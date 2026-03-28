@@ -72,9 +72,9 @@ nav_sort: case_sensitive # Capital letters sorted before lowercase
 # 对于 path路径为 docs/下的所有 type类型为 pages的文件，
 # 如果没有在文件头部特别指定，就自动为其
 # 设置 layout: "default"这个布局。
-# defaults:
-#   - scope:
-#       path: "docs" # an empty string here means all files in the project
-#       type: "pages"
-#     values:
-#       layout: "default"
+defaults:
+  - scope:
+      path: "docs" # an empty string here means all files in the project
+      type: "pages"
+    values:
+      layout: "default"
