@@ -68,3 +68,14 @@ nav_enabled: true
 # 导航链接的排序顺序
 # nav_sort: case_insensitive # default, equivalent to nil
 nav_sort: case_sensitive # Capital letters sorted before lowercase
+
+---
+title: Typography
+parent: UI Components
+nav_order: 1
+---
+
+---
+title: UI Components
+nav_order: 3
+---
