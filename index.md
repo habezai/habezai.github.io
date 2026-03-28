@@ -56,19 +56,19 @@ layout: home
 [SP800-38b]
 
 - ECDSA
-[FIPS-186-5]
-[SP800-186]
-[sec1-v2]
+[FIPS-186-5],
+[SP800-186],
+[sec1-v2],
 [sec2-v2]
 
 - EdDSA
-[FIPS-186-5]
-[SP800-186]
+[FIPS-186-5],
+[SP800-186],
 [rfc8032]
 
 - Hash
 (SHA1,SHA224,SHA256,SHA384,SHA512,SHA3-224,SHA3-256,SHA3-384,SHA3-512, SHAKE256)
-[FIPS-180-4]
+[FIPS-180-4],
 [FIPS-202]
 
 - HMAC
@@ -78,7 +78,7 @@ layout: home
 [FIPS-204]
 
 - ML-KEM
-[FIPS-203]
+[FIPS-203],
 [SP800-227.ipd]
 
 - SLH-DSA
@@ -88,7 +88,7 @@ layout: home
 [SP800-90Ar1]
 
 - RSA
-[FIPS-186-5]
+[FIPS-186-5],
 [rfc8017]
 
 ## 密码学算法验证
