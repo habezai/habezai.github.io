@@ -1,5 +1,5 @@
 ---
-title: ASymmetric Cryptography Notes
+title: ASymmetric Cryptography
 parent: Cryptography
 ---
 

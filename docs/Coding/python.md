@@ -1,5 +1,5 @@
 ---
-title: Python Notes
+title: Python language
 parent: Coding
 ---
 

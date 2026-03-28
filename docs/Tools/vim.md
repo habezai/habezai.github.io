@@ -1,5 +1,5 @@
 ---
-title: Vim Notes
+title: Vim
 parent: Tools
 ---
 

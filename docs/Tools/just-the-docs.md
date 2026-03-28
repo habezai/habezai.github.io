@@ -1,5 +1,5 @@
 ---
-title: just-the-docs Notes
+title: just-the-docs
 parent: Tools
 ---
 

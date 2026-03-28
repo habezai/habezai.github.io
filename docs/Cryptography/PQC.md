@@ -1,5 +1,5 @@
 ---
-title: PQC Notes
+title: PQC
 parent: Cryptography
 ---
 

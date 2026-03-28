@@ -1,5 +1,5 @@
 ---
-title: C Notes
+title: C language
 parent: Coding
 ---
 
