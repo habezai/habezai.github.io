@@ -47,7 +47,8 @@ search:
   # 设置搜索令牌分隔符
   # Default: /[\s\-/]+/
   # Example: enable support for hyphenated search words
-  tokenizer_separator: /[\s/]+/
+  # 修改分词器，支持中文标点
+  tokenizer_separator: /[\s\/、，。；：！？《》【】（）]+/
   # 在搜索结果中显示相对URL
   # Supports true (default) or false
   rel_url: true
