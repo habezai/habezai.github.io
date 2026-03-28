@@ -5,8 +5,6 @@ layout: home
 
 {: .no_toc }
 
-这里是网站首页的实际内容（Markdown语法）
-
 # [经验分享](/docs/Experience/)
 - 快速开发
 - 静态分析
