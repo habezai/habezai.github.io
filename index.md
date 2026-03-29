@@ -28,20 +28,20 @@ layout: home
 - [KeyNote-NF](/docs/Tools/KeyNote-NF)
 - [just-the-docs](/docs/Tools/just-the-docs)
 
-### 数值计算工具
+### 数值计算
 - [Sage Math](/docs/Tools/SageMath)
 - [OpenSSL](/docs/Tools/OpenSSL)
 
-### AUTOSAR CP之MCAL配置工具
+### AUTOSAR CP之MCAL配置
 - [EB tresos](/docs/Tools/EB-tresos)
 
-### 汽车电子嵌入式编译工具
+### 汽车电子嵌入式编译
 - [Hightech](/docs/Tools/Hightech)
 - [Tasking](/docs/Tools/Tasking)
 - [GHS](/docs/Tools/GreenHills)
 - [S32DS](/docs/Tools/S32DS)
 
-### 汽车电子嵌入式调试工具
+### 汽车电子嵌入式调试
 - [Trace32](/docs/Tools/Trace32)
 - [UDE](/docs/Tools/UDE)
 - [GHS](/docs/Tools/GreenHills)
