@@ -20,8 +20,32 @@ layout: home
 - [AI协助解决问题](/docs/Experience/AI-tips-in-work)
 
 ## [工具分享](/docs/Tools/)
+### 办公工具
 - [Vim](/docs/Tools/vim)
+- [VSCode](/docs/Tools/VSCode)
+- [Git](/docs/Tools/Git)
+- [TortoiseGit](/docs/Tools/TortoiseGit)
+- [KeyNote-NF](/docs/Tools/KeyNote-NF)
 - [just-the-docs](/docs/Tools/just-the-docs)
+
+### 数值计算工具
+- [Sage Math](/docs/Tools/SageMath)
+- [OpenSSL](/docs/Tools/OpenSSL)
+
+### AUTOSAR CP之MCAL配置工具
+- [EB tresos](/docs/Tools/EB-tresos)
+
+### 汽车电子嵌入式编译工具
+- [Hightech](/docs/Tools/Hightech)
+- [Tasking](/docs/Tools/Tasking)
+- [GHS](/docs/Tools/GreenHills)
+- [S32DS](/docs/Tools/S32DS)
+
+### 汽车电子嵌入式调试工具
+- [Trace32](/docs/Tools/Trace32)
+- [UDE](/docs/Tools/UDE)
+- [GHS](/docs/Tools/Green-Hills)
+- [S32DS](/docs/Tools/S32DS)
 
 ## [密码学技术](/docs/Cryptography/)
 - [对称加密](/docs/Cryptography/Symmetric)
@@ -33,6 +57,10 @@ layout: home
 ## [编程技术](/docs/Coding/)
 - [Python](/docs/Coding/python)
 - [C语言](/docs/Coding/c)
+- [JavaScript](/docs/Coding/javascript)
+- [Batch](/docs/Coding/Batch)
+- [数据结构与算法](/docs/Coding/Data-Structures-Algorithms)
+- [软件设计模式](/docs/Coding/Software-Design-Patterns)
 
 ## [通信技术](/docs/Communication/)
 - [信号与系统](/docs/Communication/Signals-and-Systems)

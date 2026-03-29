@@ -1,5 +1,5 @@
 ---
-title: Information Theory
+title: Information-Theory
 parent: Communication
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: Signals and Systems
+title: Signals-and-Systems
 parent: Communication
 ---
 

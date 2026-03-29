@@ -1,5 +1,5 @@
 ---
-title: Communication Principles
+title: Communication-Principles
 parent: Communication
 ---
 

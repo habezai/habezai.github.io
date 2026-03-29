@@ -1,5 +1,5 @@
 ---
-title: Python language
+title: Python-Language
 parent: Coding
 ---
 
