@@ -1,5 +1,5 @@
 ---
-title: Secure-Diagnostic
+title: Secure-Diagnosis
 parent: Automotive-Cyber-Security
 ---
 

@@ -17,52 +17,61 @@ layout: home
 - 静态分析
 - 模块化自测验证
 - Bug定位
-- [AI协助解决问题](/docs/Experience/AI-tips-in-work)
+- [AI协助解决问题](/docs/Experience/ai-tips-in-work)
+
+## [汽车信息安全](/docs/Autotive-Cyber-Security/)
+- [HSM与主机通信](/docs/Autotive-Cyber-Security/communication-between-host-hsm)
+- [数字签名](/docs/Autotive-Cyber-Security/digital-signature)
+- [安全启动](/docs/Autotive-Cyber-Security/secure-boot)
+- [安全调试](/docs/Autotive-Cyber-Security/secure-debug)
+- [安全通信](/docs/Autotive-Cyber-Security/secure-communication)
+- [安全更新](/docs/Autotive-Cyber-Security/secure-update)
+- [安全诊断](/docs/Autotive-Cyber-Security/secure-diagnosis)
 
 ## [工具分享](/docs/Tools/)
 ### 办公工具
 - [Vim](/docs/Tools/vim)
-- [VSCode](/docs/Tools/VSCode)
-- [Git](/docs/Tools/Git)
-- [TortoiseGit](/docs/Tools/TortoiseGit)
-- [KeyNote-NF](/docs/Tools/KeyNote-NF)
+- [VSCode](/docs/Tools/vscode)
+- [Git](/docs/Tools/git)
+- [TortoiseGit](/docs/Tools/tortoisegit)
+- [KeyNote-NF](/docs/Tools/keynote-nf)
 - [just-the-docs](/docs/Tools/just-the-docs)
 
 ### 数值计算
-- [Sage Math](/docs/Tools/SageMath)
-- [OpenSSL](/docs/Tools/OpenSSL)
+- [Sage Math](/docs/Tools/sagemath)
+- [OpenSSL](/docs/Tools/openssl)
 
 ### AUTOSAR CP之MCAL配置
-- [EB tresos](/docs/Tools/EB-tresos)
+- [EB tresos](/docs/Tools/eb-tresos)
 
 ### 汽车电子嵌入式编译
-- [Hightech](/docs/Tools/Hightech)
-- [Tasking](/docs/Tools/Tasking)
-- [GHS](/docs/Tools/GreenHills)
-- [S32DS](/docs/Tools/S32DS)
+- [Hightech](/docs/Tools/hightech)
+- [Tasking](/docs/Tools/tasking)
+- [GHS](/docs/Tools/greenhills)
+- [S32DS](/docs/Tools/s32ds)
 
 ### 汽车电子嵌入式调试
-- [Trace32](/docs/Tools/Trace32)
-- [UDE](/docs/Tools/UDE)
-- [GHS](/docs/Tools/GreenHills)
-- [S32DS](/docs/Tools/S32DS)
+- [Trace32](/docs/Tools/trace32)
+- [UDE](/docs/Tools/ude)
+- [GHS](/docs/Tools/greenhills)
+- [S32DS](/docs/Tools/s32ds)
 
 ## [密码学技术](/docs/Cryptography/)
-- [对称加密](/docs/Cryptography/Symmetric)
-- [非对称加密](/docs/Cryptography/Asymmetric)
-- [后量子密码学](/docs/Cryptography/PQC)
-- [全同态加密](/docs/Cryptography/FHE)
-- [国密](/docs/Cryptography/SM)
+- [对称加密](/docs/Cryptography/symmetric)
+- [非对称加密](/docs/Cryptography/asymmetric)
+- [后量子密码学](/docs/Cryptography/pqc)
+- [全同态加密](/docs/Cryptography/fhe)
+- [国密](/docs/Cryptography/sm)
 
 ## [编程技术](/docs/Coding/)
 - [Python](/docs/Coding/python)
 - [C语言](/docs/Coding/c)
 - [JavaScript](/docs/Coding/javascript)
-- [Batch](/docs/Coding/Batch)
-- [数据结构与算法](/docs/Coding/Data-Structures-Algorithms)
-- [软件设计模式](/docs/Coding/Software-Design-Patterns)
+- [Batch](/docs/Coding/batch)
+- [数据结构与算法](/docs/Coding/data-structures-algorithms)
+- [软件设计模式](/docs/Coding/software-design-patterns)
 
 ## [通信技术](/docs/Communication/)
-- [信号与系统](/docs/Communication/Signals-and-systems)
-- [通信原理](/docs/Communication/Communication-principles)
-- [信息论](/docs/Communication/Information-theory)
+- [信号与系统](/docs/Communication/signals-and-systems)
+- [通信原理](/docs/Communication/communication-principles)
+- [信息论](/docs/Communication/information-theory)
