@@ -63,6 +63,6 @@ layout: home
 - [软件设计模式](/docs/Coding/Software-Design-Patterns)
 
 ## [通信技术](/docs/Communication/)
-- [信号与系统](/docs/Communication/Signals-and-Systems)
-- [通信原理](/docs/Communication/Communication-Principles)
-- [信息论](/docs/Communication/Information-Theory)
+- [信号与系统](/docs/Communication/Signals-and-systems)
+- [通信原理](/docs/Communication/Communication-principles)
+- [信息论](/docs/Communication/Information-theory)
