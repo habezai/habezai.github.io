@@ -44,7 +44,7 @@ layout: home
 ### 汽车电子嵌入式调试工具
 - [Trace32](/docs/Tools/Trace32)
 - [UDE](/docs/Tools/UDE)
-- [GHS](/docs/Tools/Green-Hills)
+- [GHS](/docs/Tools/GreenHills)
 - [S32DS](/docs/Tools/S32DS)
 
 ## [密码学技术](/docs/Cryptography/)
