@@ -19,14 +19,14 @@ layout: home
 - Bug定位
 - [AI协助解决问题](/docs/Experience/ai-tips-in-work)
 
-## [汽车信息安全](/docs/Autotive-Cyber-Security/)
-- [HSM与主机通信](/docs/Autotive-Cyber-Security/communication-between-host-hsm)
-- [数字签名](/docs/Autotive-Cyber-Security/digital-signature)
-- [安全启动](/docs/Autotive-Cyber-Security/secure-boot)
-- [安全调试](/docs/Autotive-Cyber-Security/secure-debug)
-- [安全通信](/docs/Autotive-Cyber-Security/secure-communication)
-- [安全更新](/docs/Autotive-Cyber-Security/secure-update)
-- [安全诊断](/docs/Autotive-Cyber-Security/secure-diagnosis)
+## [汽车信息安全](/docs/Automotive-Cyber-Security/)
+- [HSM与主机通信](/docs/Automotive-Cyber-Security/communication-between-host-hsm)
+- [数字签名](/docs/Automotive-Cyber-Security/digital-signature)
+- [安全启动](/docs/Automotive-Cyber-Security/secure-boot)
+- [安全调试](/docs/Automotive-Cyber-Security/secure-debug)
+- [安全通信](/docs/Automotive-Cyber-Security/secure-communication)
+- [安全更新](/docs/Automotive-Cyber-Security/secure-update)
+- [安全诊断](/docs/Automotive-Cyber-Security/secure-diagnosis)
 
 ## [工具分享](/docs/Tools/)
 ### 办公工具

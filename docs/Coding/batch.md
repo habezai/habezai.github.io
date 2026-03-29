@@ -1,6 +1,6 @@
 ---
 title: Batch
-parent: Tools
+parent: Coding
 ---
 
 Batch 笔记
