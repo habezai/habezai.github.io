@@ -64,5 +64,5 @@ layout: home
 
 ## [通信技术](/docs/Communication/)
 - [信号与系统](/docs/Communication/Signals-and-Systems)
-- [通信原理](/docs/Communication/Communication-principles)
-- [信息论](/docs/Communication/Information-theory)
+- [通信原理](/docs/Communication/Communication-Principles)
+- [信息论](/docs/Communication/Information-Theory)
