@@ -3,6 +3,13 @@ title: C语言工厂模式
 parent: Software-Design-Patterns
 ---
 # C语言工厂模式
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 ## 痛，太痛了，一换芯片就痛，为啥？
 为什么换个传感器这么痛苦？
