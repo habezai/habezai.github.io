@@ -69,7 +69,7 @@ layout: home
 - [JavaScript](/docs/Coding/javascript)
 - [Batch](/docs/Coding/batch)
 - [数据结构与算法](/docs/Coding/data-structures-algorithms)
-- [软件设计模式](/docs/Coding/software-design-patterns)
+- [软件设计模式](/docs/Coding/Software-Design-Patterns)
 
 ## [通信技术](/docs/Communication/)
 - [信号与系统](/docs/Communication/signals-and-systems)
