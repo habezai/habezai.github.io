@@ -79,3 +79,12 @@ defaults:
       type: "pages"
     values:
       layout: "default"
+
+# 启用自定义CSS
+sass:
+  sass_dir: _sass
+  style: compressed
+
+# 添加自定义JS
+head_scripts:
+  - /assets/js/toc.js
