@@ -49,8 +49,8 @@ typedef struct {
 } Sensor_Ops; 
 ```
 这个 Sensor_Ops 就是我们的"接口"：
-	• 所有传感器都必须提供 `init、read_temp、read_humi `这三个函数
-	• **上层业务只依赖这个结构体**，不关心具体是哪款传感器
+	- 所有传感器都必须提供 `init、read_temp、read_humi `这三个函数
+	- **上层业务只依赖这个结构体**，不关心具体是哪款传感器
 	
 ### 类名统一，实例各自实现
 
@@ -257,9 +257,9 @@ extern const Sensor_Ops* __stop_sensor_registry;
 ```
 
 关键解释：
-• __attribute__((section(".sensor_registry")))：告诉编译器把这个变量放到名为 .sensor_registry 的段
-• __attribute__((used))：防止编译器优化掉这个"看起来没用"的变量
-• __start_xxx 和 __stop_xxx：GCC 链接器会自动为每个自定义段生成这两个符号
+- __attribute__((section(".sensor_registry")))：告诉编译器把这个变量放到名为 .sensor_registry 的段
+- __attribute__((used))：防止编译器优化掉这个"看起来没用"的变量
+- __start_xxx 和 __stop_xxx：GCC 链接器会自动为每个自定义段生成这两个符号
 
 ### 步骤二：驱动文件使用注册宏
 ```c
@@ -448,9 +448,9 @@ void test_high_temp_alarm(void) {
 
 ### 多版本兼容,一套代码走四方
 公司产品线：
-• Pro 版：用高精度 SHT30，贵但准
-• Lite 版：用便宜的 DHT11，性价比高
-• 工业版：用 PT100，-200°C 到 850°C
+- Pro 版：用高精度 SHT30，贵但准
+- Lite 版：用便宜的 DHT11，性价比高
+- 工业版：用 PT100，-200°C 到 850°C
 
 传统方案？三套代码库，维护到怀疑人生。工厂模式方案？**一套代码，编译时选择**：
 ```c
