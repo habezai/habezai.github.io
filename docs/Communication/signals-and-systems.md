@@ -1,7 +1,7 @@
 ---
 title: Signals-and-Systems
 parent: Communication
-math: katex
+math: mathjax
 ---
 
 ## 第一章 信号与系统
