@@ -39,10 +39,10 @@ parent: Communication
 ## 1.2 自变量变换
 三种自变量变换：
 - 时移 $x[n] -> x[n - n_0]$
-![](vx_images/475573945617568.png =275x)
+![](vx_images/475573945617568.png)
 
 - 时间反转 $x[n] -> x[-n]$
-![](vx_images/116543209368368.png =263x)
+![](vx_images/116543209368368.png)
 
 - 时间尺度变换 $x[t] -> x[a*t]$
-![](vx_images/442515628720318.png =191x)
+![](vx_images/442515628720318.png)
