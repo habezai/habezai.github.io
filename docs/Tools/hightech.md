@@ -1,5 +1,5 @@
 ---
-title: Green Hills
+title: HighTech
 parent: Tools
 ---
 
