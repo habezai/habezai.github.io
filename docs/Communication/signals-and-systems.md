@@ -1,6 +1,7 @@
 ---
 title: Signals-and-Systems
 parent: Communication
+math: katex
 ---
 
 ## 第一章 信号与系统
@@ -22,9 +23,9 @@ parent: Communication
 > Note：这里的功率与能量，与是否真正关联了物理量没有关系。只是在信号处理中，我们通常把信号看成复数，而复数的模平方就是信号的能量。
 
 很多时候，系统的关心TT是信号在一个无穷大的时间间隔内的总TT量与平均功率。这样:
-- 连续信号的总能量为：$lim_{T \to \infty} \int_{-T}^{T} |x(t)|^2 dt = \int_{-\infty}^\infty |x(t)|^2 dt$
+- 连续信号的总能量为：$$lim_{T \to \infty} \int_{-T}^{T} |x(t)|^2 dt = \int_{-\infty}^\infty |x(t)|^2 dt$$
 
-- 连续信号的平均功率为：$lim_{T \to \infty} \frac{1}{2T} \int_{-T}^{T} |x(t)|^2 dt$
+- 连续信号的平均功率为：$$lim_{T \to \infty} \frac{1}{2T} \int_{-T}^{T} |x(t)|^2 dt$$
 
 - 离散信号的总能量为：$lim_{N \to \infty} \sum_{n=-N}^{N} |x(n)|^2 = \sum_{-\infty}^\infty |x(n)|^2$
 
