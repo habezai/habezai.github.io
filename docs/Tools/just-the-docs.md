@@ -3,4 +3,4 @@ title: just-the-docs
 parent: Tools
 ---
 
-just-the-docs 笔记
+just-the-docs 

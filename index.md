@@ -75,3 +75,6 @@ layout: home
 - [信号与系统](/docs/Communication/signals-and-systems)
 - [通信原理](/docs/Communication/communication-principles)
 - [信息论](/docs/Communication/information-theory)
+
+## [英语学习](/docs/EnglishLearning/)
+- [口语表达](/docs/EnglishLearning/Conversational-American-English)
