@@ -76,5 +76,5 @@ layout: home
 - [通信原理](/docs/Communication/communication-principles)
 - [信息论](/docs/Communication/information-theory)
 
-## [英语学习](/docs/EnglishLearning/)
-- [口语表达](/docs/EnglishLearning/Conversational-American-English)
+## [英语学习](/docs/English-Learning/)
+- [口语表达](/docs/English-Learning/Conversational-American-English)
