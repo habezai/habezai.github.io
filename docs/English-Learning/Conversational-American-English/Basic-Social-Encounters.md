@@ -1,20 +1,27 @@
 ---
-title: American-English-Expression
-parent: English-Learning
----
+title: Basic-Social-Encounters
+parent: American-English-Expression
+--- 
 
-## BASIC    SOCIAL    ENCOUNTERS
-        
-### 1    Simple    greetings
+# Basic Social Encounters
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
+## 1    Simple    greetings
 ![](vx_images/523572679579309.png)
 - Hi!
 - Hello!
 - Hello    there!
 - Howdy!
 - Hey!
-- Yo!    (slang）
+- Yo! (slang)
 
-### 2    General    greeting
+## 2    General    greeting
 - How    are    you?
 - How’s    it    going?
 - How’s    it    been?
@@ -31,7 +38,7 @@ parent: English-Learning
 - Wusup?    /    Wassup?    (slang)
 - What’s    happening?    (slang)    What’s    going    on?    (slang)
 
-### 3    Greetings    for    various    times    of    the    day
+## 3    Greetings    for    various    times    of    the    day
 - Good    morning.
 - Morning.
 - Mornin’.    (informal)
@@ -41,14 +48,14 @@ parent: English-Learning
 - Good    evening.
 - Evening
 
-### 4    Greeting    a    person    you    haven’t    seen    in    a    long    time
+## 4    Greeting    a    person    you    haven’t    seen    in    a    long    time
 ![](vx_images/101703285130386.png)
 - I    haven’t    seen    you    in    years!
 - Long    time    no    see!    (informal)    I    haven’t    seen    you    in    an    age!
 - I    haven’t    seen    you    in    a    month  of    Sundays!
 > a    month    of    Sundays    =    a    long    time
 
-### 5    Welcoming    someone    who    has    returned
+## 5    Welcoming    someone    who    has    returned
 - Welcome    back!
 - Welcome    back,    stranger!
 - Long    time    no    see!    (cliché)    Where    were    you?
