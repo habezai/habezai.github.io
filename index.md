@@ -20,7 +20,7 @@ layout: home
 - [AI协助解决问题](/docs/Experience/ai-tips-in-work)
 
 ## [汽车信息安全](/docs/Automotive-Cyber-Security/)
-- [HSM与主机通信](/docs/Automotive-Cyber-Security/communication-between-host-hsm)
+- [HSM开发](/docs/Automotive-Cyber-Security/hsm-development)
 - [数字签名](/docs/Automotive-Cyber-Security/digital-signature)
 - [安全启动](/docs/Automotive-Cyber-Security/secure-boot)
 - [安全调试](/docs/Automotive-Cyber-Security/secure-debug)
