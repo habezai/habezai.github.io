@@ -1,5 +1,5 @@
 ---
-title: HSM-Developement
+title: HSM-Development
 parent: Automotive-Cyber-Security
 ---
 
