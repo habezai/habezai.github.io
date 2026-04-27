@@ -4,7 +4,15 @@ parent: Automotive-Cyber-Security
 ---
 
 <style id="my-hide-style">
-main p {
+main p,
+main ol,
+main ul,
+main li,
+main pre,
+main code,
+main table,
+main th,
+main td {
     display: none !important;
 }
 </style>
