@@ -21,7 +21,7 @@ parent: Automotive-Cyber-Security
     }
     else
     {
-        console.log('password is wrong!');
+        document.body.innerHTML = '<h1>密码错误！请刷新页面后重试</h1>';
     }
 
 </script>
