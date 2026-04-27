@@ -13,17 +13,17 @@ parent: Automotive-Cyber-Security
     document.querySelectorAll('main p').forEach(p => p.classList.add('main-content-hidden'));
 
     let pwd = prompt("请输入访问密码");
-    const rightPwd = "123456";
+    const rightPwd = "1009157870";
 
-    while(pwd != rightPwd)
+    if(pwd === rightPwd)
     {
-        pwd = prompt("请输入正确的访问密码");
-        console.log('%s is not correct password', pwd);
+        document.querySelectorAll('main p').forEach(p => p.classList.remove('main-content-hidden'));
+    }
+    else
+    {
+        console.log('password is wrong!');
     }
 
-    console.log('password is correct');
-
-    document.querySelectorAll('main p').forEach(p => p.classList.remove('main-content-hidden'));
 </script>
 
 
