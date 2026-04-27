@@ -4,8 +4,8 @@ parent: Automotive-Cyber-Security
 ---
 
 <style>
-    main p, main div:not(script):not(style) {
-    display: none;
+    main p{
+    display: none !important;
 }
 </style>
 
@@ -14,10 +14,8 @@ const rightPwd = "1009157870";
 let pwd = prompt("请输入访问密码");
 
 if (pwd === rightPwd) {
-    document.querySelectorAll('main p, main div:not(script):not(style)')
-    .forEach(el => {
-        el.style.display = "";
-    });
+    const styleDom = document.querySelector('style');
+    if (styleDom) styleDom.remove()
 } else {
     console.log('password is wrong!');
 }
