@@ -4,25 +4,36 @@ parent: Automotive-Cyber-Security
 ---
 
 <style>
-/* 默认隐藏整篇正文 */
-.page-content {
-  display: none !important;
+/* 隐藏文章内容 */
+#write, .markdown-body, main, article {
+    display: none !important;
 }
 </style>
+
 <script>
-(function(){
-  const pwd = prompt("本文受保护，请输入访问密码");
-  const correctPwd = `1009157870`;
-  if(pwd === correctPwd){
-    // 密码正确，显示正文
-    document.querySelector('.page-content').style.display = 'block';
-   } else {
-     document.body.innerHTML = `<div style="text-align:center;margin-top:80px;font-size:18px;color:red;">
-     密码错误，无权查看
-     </div>`;
-   }
-})();
+// 等待页面加载完成再执行
+window.onload = function() {
+    // 你自己的密码
+    const password = "1009157870";
+    
+    // 弹出输入框
+    let input = prompt("请输入访问密码：");
+    
+    if(input === password) {
+        // 显示内容（覆盖所有常见平台）
+        document.querySelectorAll('#write, .markdown-body, main, article').forEach(el => {
+            el.style.display = "block";
+        });
+    } else {
+        document.body.innerHTML = `
+            <div style="text-align:center;margin-top:100px;font-size:20px;color:red;">
+                密码错误，无权访问
+            </div>
+        `;
+    }
+}
 </script>
+
 
 HSM设计
 
