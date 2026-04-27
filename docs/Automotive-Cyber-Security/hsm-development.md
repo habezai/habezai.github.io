@@ -4,13 +4,13 @@ parent: Automotive-Cyber-Security
 ---
 
 <style id="my-hide-style">
-    main p {
-        display: none !important;
-    }
+main p {
+    display: none !important;
+}
 </style>
 
 <script>
-const rightPwd = "123";
+const rightPwd = "hbz";
 let pwd = prompt("请输入访问密码");
 
 if (pwd === rightPwd) {
@@ -19,6 +19,7 @@ if (pwd === rightPwd) {
 } else {
     /*document.body.innerHTML = "<h1>密码错误</h1>";*/
     console.log("password is wrong!");
+    alert("密码无效");
 }
 </script>
 
