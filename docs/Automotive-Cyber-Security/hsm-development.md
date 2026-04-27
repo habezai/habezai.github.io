@@ -3,21 +3,22 @@ title: HSM-Development
 parent: Automotive-Cyber-Security
 ---
 
-<style>
-    main p{
-    display: none !important;
-}
+<style id="my-hide-style">
+    main p {
+        display: none !important;
+    }
 </style>
 
 <script>
-const rightPwd = "1009157870";
+const rightPwd = "123";
 let pwd = prompt("请输入访问密码");
 
 if (pwd === rightPwd) {
-    const styleDom = document.querySelector('style');
-    if (styleDom) styleDom.remove()
+    const style = document.getElementById("my-hide-style");
+    if (style) style.remove();
 } else {
-    console.log('password is wrong!');
+    /*document.body.innerHTML = "<h1>密码错误</h1>";*/
+    console.log("password is wrong!");
 }
 </script>
 
