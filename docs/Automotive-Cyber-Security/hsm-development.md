@@ -4,26 +4,24 @@ parent: Automotive-Cyber-Security
 ---
 
 <style>
-.main-content-hidden {
-    display: none !important;
+    main p, main div:not(script):not(style) {
+    display: none;
 }
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('main p').forEach(p => p.classList.add('main-content-hidden'));
+const rightPwd = "1009157870";
+let pwd = prompt("请输入访问密码");
 
-    let pwd = prompt("请输入访问密码");
-    const rightPwd = "1009157870";
-
-    if(pwd === rightPwd)
-    {
-        document.querySelectorAll('main p').forEach(p => p.classList.remove('main-content-hidden'));
-    }
-    else
-    {
-    }
+if (pwd === rightPwd) {
+    document.querySelectorAll('main p, main div:not(script):not(style)')
+    .forEach(el => {
+        el.style.display = "";
+    });
+} else {
+    console.log('password is wrong!');
 }
+</script>
 </script>
 
 
