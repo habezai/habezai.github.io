@@ -10,6 +10,7 @@ parent: Automotive-Cyber-Security
 </style>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('main p').forEach(p => p.classList.add('main-content-hidden'));
 
     let pwd = prompt("请输入访问密码");
@@ -21,9 +22,8 @@ parent: Automotive-Cyber-Security
     }
     else
     {
-        document.body.innerHTML = '<h1>密码错误！请刷新页面后重试</h1>';
     }
-
+}
 </script>
 
 
