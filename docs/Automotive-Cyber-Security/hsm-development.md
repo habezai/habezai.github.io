@@ -12,7 +12,7 @@ parent: Automotive-Cyber-Security
 <script>
     document.querySelectorAll('main p').forEach(p => p.classList.add('main-content-hidden'));
 
-    const pwd = prompt("请输入访问密码");
+    let pwd = prompt("请输入访问密码");
     const rightPwd = "123456";
 
     while(pwd != rightPwd)
