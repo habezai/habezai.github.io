@@ -20,7 +20,6 @@ if (pwd === rightPwd) {
     console.log('password is wrong!');
 }
 </script>
-</script>
 
 
 HSM设计
