@@ -3,6 +3,15 @@ title: Vim
 parent: Tools
 ---
 
+# Vim
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
 ## Vim Cheat Sheet罗列
 - [Vim Cheat Sheet](non-markdown/Vim_Cheat_Sheet.html)
 

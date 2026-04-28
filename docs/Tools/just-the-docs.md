@@ -3,6 +3,15 @@ title: just-the-docs
 parent: Tools
 ---
 
+# just-the-docs
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
 ## 1.创建新站点
 > To get started with creating a site, simply:
 > 1.click ["use this template"](https://github.com/just-the-docs/just-the-docs-template/generate) to create a GitHub repository
