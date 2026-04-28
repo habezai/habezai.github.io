@@ -12,7 +12,7 @@ parent: Tools
 1. TOC
 {:toc}
 
-## Vim Cheat Sheet罗列
+## Vim 常用操作备忘表
 - [Vim Cheat Sheet](non-markdown/Vim_Cheat_Sheet.html)
 
 ## Vim 设置字体
