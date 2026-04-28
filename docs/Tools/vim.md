@@ -27,7 +27,7 @@ set guifont=*
 ![](vx_images/120776795525312.png)
 
 ## Vim启动命令行参数
-1. **远程控制**（例如：让已打开的 GVim 新开标签 / 窗口） 
+- **远程控制**（例如：让已打开的 GVim 新开标签 / 窗口） 
 
 参数	作用
 
@@ -47,7 +47,7 @@ set guifont=*
 gvim --remote-tab-silent file.txt 
 ```
 
-2. **启动后直接执行命令**（+command） 
+- **启动后直接执行命令**（+command） 
 
 格式： 
 vim +命令 文件名 
@@ -62,7 +62,7 @@ vim +命令 文件名
 
 
 
-3. **只读 / 安全模式** 
+- **只读 / 安全模式** 
 
 `vim -R file.txt`   只读模式（不能修改保存）
 
@@ -70,13 +70,13 @@ vim +命令 文件名
 
 `vim -n file.txt`   不创建 .swp 交换文件
 
-4. **diff 模式(对比文件)**
+- **diff 模式(对比文件)**
 
 `vim -d file1.txt file2.txt`
 
 `gvim -d file1.txt file2.txt`
 
-5. **窗口、标签页控制**
+- **窗口、标签页控制**
 
 `vim -p file1 file2 file3` 以多标签方式打开多个文件（终端 Vim 也能用） 
 
