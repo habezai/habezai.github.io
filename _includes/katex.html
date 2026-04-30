@@ -17,12 +17,11 @@ onload="renderMathInElement(document.body, {
   strict: false,
   throwOnError: false,
   delimiters: [
-    {left: '\\(', right: '\\)', display: false},
+    {left: '$$', right: '$$', display: true},
     {left: '$', right: '$', display: false},
-    {left: '\\[', right: '\\]', display: true},
-    {left: '$$', right: '$$', display: true}
-  ],
-  ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    {left: '\\(', right: '\\)', display: false},
+    {left: '\\[', right: '\\]', display: true}
+  ]
 });"></script>
 
 <!-- The KaTeX default is 1.21em, see https://katex.org/docs/font.html#font-size-and-lengths -->
