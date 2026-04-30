@@ -82,22 +82,22 @@ const pwdSubmit = document.getElementById("pwd-submit");
 const pwdTip = document.getElementById("pwd-tip");
 const hideStyle = document.getElementById("my-hide-style");
 
-// 确认密码
+/* 确认密码 */
 function checkPwd() {
     const val = pwdInput.value.trim();
     if (val === rightPwd) {
-        // 密码正确：显示内容 + 移除密码框
+        /* 密码正确：显示内容 + 移除密码框 */
         if (hideStyle) hideStyle.remove();
         pwdBox.remove();
     } else {
-        // 密码错误：页面内提示
+        /* 密码错误：页面内提示 */
         pwdTip.textContent = "密码无效，请重试";
         pwdInput.value = "";
         pwdInput.focus();
     }
 }
 
-// 点击/回车都能提交
+/* 点击/回车都能提交 */
 pwdSubmit.onclick = checkPwd;
 pwdInput.onkeydown = (e) => {
     if (e.key === "Enter") checkPwd();
