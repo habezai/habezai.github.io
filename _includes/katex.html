@@ -17,7 +17,9 @@ onload="renderMathInElement(document.body, {
   strict: false,
   throwOnError: false,
   delimiters: [
+    {left: '\\(', right: '\\)', display: false},
     {left: '$', right: '$', display: false},
+    {left: '\\[', right: '\\]', display: true},
     {left: '$$', right: '$$', display: true}
   ],
   ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
