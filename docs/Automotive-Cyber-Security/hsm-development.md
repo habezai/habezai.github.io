@@ -44,7 +44,7 @@ if (pwd === rightPwd) {
 ## HSM整体架构
 
 整体采用 Client-Server架构, 如下图:
-![](vx_images/21203024880334.png)
+![](vx_images/578905217837700.svg)
 
 ## 需求和设计原则
 1. Client-Server通信：
@@ -62,11 +62,10 @@ if (pwd === rightPwd) {
     - 精准对应各逻辑异常，全局统一分发
 
 ## 同步/异步请求时序流程图
-![](vx_images/569086848091825.png)
-
+![](vx_images/31044238105606.svg)
 
 ## 任务队列+Worker模式流程图
-![](vx_images/41267376455510.png)
+![renwu_worker](vx_images/115893834789404.svg)
 
 ## 子架构图( Server端 )
 
