@@ -24,20 +24,84 @@ main th,
 main td {
     display: none !important;
 }
+
+/* 密码面板样式 */
+#pwd-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 30px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    z-index: 9999;
+    text-align: center;
+    font-family: Arial, sans-serif;
+}
+#pwd-input {
+    padding: 10px 15px;
+    width: 200px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+}
+#pwd-submit {
+    padding: 10px 20px;
+    background: #409eff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+}
+#pwd-submit:hover {
+    background: #337ecc;
+}
+#pwd-tip {
+    margin-top: 12px;
+    color: #f56c6c;
+    font-size: 14px;
+    height: 16px;
+}
 </style>
+
+<div id="pwd-box">
+    <div>请输入访问密码</div>
+    <input type="password" id="pwd-input" placeholder="输入密码">
+    <button id="pwd-submit">确认</button>
+    <div id="pwd-tip"></div>
+</div>
 
 <script>
 const rightPwd = "hbz";
-let pwd = prompt("请输入访问密码");
+const pwdBox = document.getElementById("pwd-box");
+const pwdInput = document.getElementById("pwd-input");
+const pwdSubmit = document.getElementById("pwd-submit");
+const pwdTip = document.getElementById("pwd-tip");
+const hideStyle = document.getElementById("my-hide-style");
 
-if (pwd === rightPwd) {
-    const style = document.getElementById("my-hide-style");
-    if (style) style.remove();
-} else {
-    /*document.body.innerHTML = "<h1>密码错误</h1>";*/
-    console.log("password is wrong!");
-    alert("密码无效");
+// 确认密码
+function checkPwd() {
+    const val = pwdInput.value.trim();
+    if (val === rightPwd) {
+        // 密码正确：显示内容 + 移除密码框
+        if (hideStyle) hideStyle.remove();
+        pwdBox.remove();
+    } else {
+        // 密码错误：页面内提示
+        pwdTip.textContent = "密码无效，请重试";
+        pwdInput.value = "";
+        pwdInput.focus();
+    }
 }
+
+// 点击/回车都能提交
+pwdSubmit.onclick = checkPwd;
+pwdInput.onkeydown = (e) => {
+    if (e.key === "Enter") checkPwd();
+};
 </script>
 
 
