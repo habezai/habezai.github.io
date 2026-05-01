@@ -1,6 +1,7 @@
 ---
 title: Cryptographic Primitives
 parent: Cryptography
+math: katex
 ---
 
 ## 密码学原语

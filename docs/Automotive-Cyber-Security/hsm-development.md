@@ -1,6 +1,7 @@
 ---
 title: HSM-Development
 parent: Automotive-Cyber-Security
+math: katex
 ---
 
 # HSM-Development

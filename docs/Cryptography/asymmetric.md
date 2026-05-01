@@ -1,6 +1,7 @@
 ---
 title: ASymmetric Cryptography
 parent: Cryptography
+math: katex
 ---
 
 # ASymmetric Cryptography
