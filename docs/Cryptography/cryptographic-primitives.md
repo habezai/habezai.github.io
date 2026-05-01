@@ -1,7 +1,6 @@
 ---
 title: Cryptographic Primitives
 parent: Cryptography
-math: true
 ---
 
 ## 密码学原语
