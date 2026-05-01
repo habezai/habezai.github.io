@@ -5,4 +5,10 @@
     <p class="text-small text-grey-dk-00 italic">
     最后构建于：{{ site.time | date: "%Y-%m-%d %H:%M:%S" }}
     </p>
+    <hr>
+    <p class="text-small text-grey-dk-00 italic"> 
+        {% assign utc_time = site.time | date: "%Y-%m-%d %H:%M:%S" %}
+        {% assign beijing_time = site.time | date: "%s" | plus: 28800 | date: "%Y-%m-%d %H:%M:%S" %}
+        最后构建于：{{ utc_time }} UTC（北京时间 {{ beijing_time }}）
+    </p>
 </footer>
