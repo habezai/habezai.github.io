@@ -15,5 +15,6 @@ $code-font-size: 1.0em;          // 字体大小（0.85em、0.9em、1em 都可�
 code {
   color: $code-color !important;
   font-size: $code-font-size !important;
+  font-weight: bold !important;
   background-color: $code-bg-color !important;
 }
