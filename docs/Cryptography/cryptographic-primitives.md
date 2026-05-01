@@ -28,3 +28,22 @@ parent: Cryptography
 - **流密码**：
 `流密码`是一类`逐比特（一次处理一个比特）`利用`密钥流对明文进行加密`的加密算法。
 设 $$P$$ 为明文， \(S\) 为密钥流（与明文长度相同），则密文 \\(C\\) 的定义为 $$C=P\oplus S$$ ，其中 $\oplus$ 为按位异或运算符。反之，明文可由 \(P=C\oplus S\) 求得。因此，`加密和解密是完全相同的运算`。总体而言，`流密码的运算速度远快于分组密码`。
+
+普通文本 (hello)
+
+行内公式：<span class="math">\(E=mc^2\)</span>
+行内公式：<span class="math">$E=mc^2$</span>
+
+块级公式：
+<span class="math">
+\[
+\int_0^\infty e^{-x} dx = 1
+\]
+</span>
+
+块级公式：
+<span class="math">
+$$
+\int_0^\infty e^{-x} dx = 1
+$$
+</span>
