@@ -3,7 +3,6 @@
 // ==============================
 $code-color: #d54c94;            // 行内代码文字颜色
 $code-bg-color: #f8f9fa;         // 行内代码背景色
-$block-code-bg-color: #282c34;        // 代码块背景色
 // ==============================
 // 行内代码 字体大小
 // ==============================
@@ -12,23 +11,8 @@ $code-font-size: 1.0em;          // 字体大小（0.85em、0.9em、1em 都可�
 // ==============================
 // 强制覆盖行内代码样式（必加）
 // ==============================
-:not(pre) > code {
+code {
   color: $code-color !important;
   font-size: $code-font-size !important;
   font-weight: bold !important;
-  background-color: $code-bg-color !important;
-}
-
-// ==============================
-// 单独配置：代码块
-// ==============================
-pre > code {
-  background-color: transparent; // pre 已经有背景，code 不要重复
-  font-size: $block-code-font-size;
-}
-
-// 顺带配置代码块外层 pre 背景
-pre {
-  background-color: $block-code-bg-color;
-  border-radius: 6px;
 }
