@@ -10,8 +10,10 @@ math: katex
 ## Table of contents
 {: .no_toc .text-delta }
 
-1. TOC
-{:toc}
+<nav class="right-toc" markdown="1">
+  1. 目录
+  {:toc}
+</nav>
 
 ## 密码学原语
 它是一种**用于构建**计算机安全系统的**基本加密算法**。
@@ -40,7 +42,7 @@ math: katex
 
 - **流密码(Stream Ciphers)**：
 `流密码`是一类`逐比特（一次处理一个比特）`利用`密钥流对明文进行加密`的加密算法。
-设 $P$ 为明文， \(S\) 为密钥流（与明文长度相同），则密文 $C$ 的定义为 $C=P\oplus S$ ，其中 $\oplus$ 为按位异或运算符。反之，明文可由 $P=C\oplus S$ 求得。因此，`加密和解密是完全相同的运算`。总体而言，`流密码的运算速度远快于分组密码`。
+设 $P$ 为明文， $S$ 为密钥流（与明文长度相同），则密文 $C$ 的定义为 $C=P\oplus S$ ，其中 $\oplus$ 为按位异或运算符。反之，明文可由 $P=C\oplus S$ 求得。因此，`加密和解密是完全相同的运算`。总体而言，`流密码的运算速度远快于分组密码`。
 
 - **公钥加密算法(Public-key Encryption Algorithms )**
 主要包括`RSA、ElGamal和ECIES`（Elliptic Curve Integrated Encryption Scheme）密码系统

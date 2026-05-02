@@ -16,3 +16,53 @@ code {
   font-size: $code-font-size !important;
   font-weight: bold !important;
 }
+
+/* 只缩小字体到 80%，不改变页面布局 */
+html {
+  font-size: 80% !important;
+}
+
+/* 右侧悬浮目录 : 1000px 以上 */
+@media (min-width: 1000px) {
+  .right-toc {
+    position: fixed;
+    /* 目录顶部位置 */
+    top: 100px;
+    /* 目录右侧位置 */
+    right: 0px;
+    /* 目录宽度 */
+    width: 200px;
+    /* 目录最大高度 */
+    max-height: 75vh;
+    /* 目录滚动条 */
+    overflow-y: auto;
+    /* 目录内边距 */
+    padding: 20px;
+    /* 目录背景颜色: 透明 */
+    background: transparent;
+    /* 目录圆角 */
+    border-radius: 8px;
+    /* 目录边框 */
+    border: 1px solid #e9ecef;
+    /* 目录层级 */
+    z-index: 999;
+    /* 目录字体大小 */
+    font-size: 0.5em;
+  }
+
+  .right-toc a {
+    text-decoration: none;
+    color: #007bff;
+  }
+
+  .right-toc a:hover {
+    text-decoration: underline;
+  }
+}
+
+/* 右侧悬浮目录 : 1000px 以下 */
+@media (max-width: 999px) {
+  .right-toc {
+    display: none;
+  }
+}

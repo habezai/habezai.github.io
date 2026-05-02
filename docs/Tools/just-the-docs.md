@@ -9,8 +9,10 @@ parent: Tools
 ## Table of contents
 {: .no_toc .text-delta }
 
-1. TOC
-{:toc}
+<nav class="right-toc" markdown="1">
+  1. 目录
+  {:toc}
+</nav>
 
 ## 1.创建新站点
 > To get started with creating a site, simply:
@@ -72,8 +74,12 @@ aux_links:
 
 - 修改你的工作目录到你的站点根目录。
 - 执行 `bundle install`.
-- 执行 `bundle exec jekyll serve` to build your site and preview it at `localhost:4000`.
+- 执行 `bundle exec jekyll serve --port 4001` 构建你的站点并在 `localhost:4001` 上预览(默认端口为4000,如果4000端口被占用,则使用4001端口)。
 - 构建好的内容会存在 `_site` 目录下。
+
+如果需要启用修改后自动刷新浏览器，执行 `bundle exec jekyll serve --livereload --port 4001` 即可。
+
+差异是 `--livereload` 选项: 如果未指定,则默认不启用自动刷新功能,即使未设置此选项，修改markdown等文件的编译也是自动的,只是不会自动刷新浏览器。
 
 ## 5.在不同的平台上发布你构建的网站
 只需要上传`_site`目录下的所有文件。
