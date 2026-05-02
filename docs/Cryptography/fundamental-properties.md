@@ -1,5 +1,5 @@
 ---
-title: Fundamental Properties
+title: Fundamental Properties of Cryptographic Algorithms
 parent: Cryptography
 math: katex
 ---

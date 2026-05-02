@@ -57,6 +57,23 @@ aux_links:
     - "https://github.com/habezai"  
 ```
 
+## 4.在本地构建和预览站点
+假设你已经安装了 [Jekyll](https://jekyllrb.com/) 和 [Bundler](https://bundler.io/)，
 
 
+>安装
+    1. [windows下安装Ruby(Ruby+DevKit )](https://rubyinstaller.org/downloads/)
+    2. gem install jekyll bundler
+    3.查看安装状态
+        ruby -v
+        jekyll -v
+        bundler -v
 
+
+- 修改你的工作目录到你的站点根目录。
+- 执行 `bundle install`.
+- 执行 `bundle exec jekyll serve` to build your site and preview it at `localhost:4000`.
+- 构建好的内容会存在 `_site` 目录下。
+
+## 5.在不同的平台上发布你构建的网站
+只需要上传`_site`目录下的所有文件。
