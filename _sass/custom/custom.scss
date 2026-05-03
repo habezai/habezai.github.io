@@ -2,8 +2,7 @@
 // 行内代码 颜色 & 背景色
 // ==============================
 //高亮颜色
-$code-color: #44aa44;            // 行内代码文字颜色
-$code-bg-color: #f8f9fa;         // 行内代码背景色
+$code-color: #bb6000;            // 行内代码文字颜色
 // ==============================
 // 行内代码 字体大小
 // ==============================
@@ -15,7 +14,6 @@ $code-font-size: 1.0em;          // 字体大小（0.85em、0.9em、1em 都可�
 code {
   color: $code-color !important;
   font-size: $code-font-size !important;
-  font-weight: bold !important;
 }
 
 /* 只缩小字体到 80%，不改变页面布局 */
