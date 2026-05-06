@@ -24,6 +24,7 @@ parent: Tools
     box-sizing: border-box;
     font-size: 14px;
     border: 1px solid #ccc;
+    border: 1px solid #ccc;
     border-radius: 6px;
   }
   
@@ -217,6 +218,7 @@ window.onload = function() {
 
     /* 处理输入：ASCII 或 严格校验的HEX */
     let data;
+    let inputHex = '';
     try {
       if (inputMode === 'hex') {
         /* 严格校验HEX格式：只允许 0-9 a-f A-F */
@@ -230,8 +232,13 @@ window.onload = function() {
         }
         /* 转换为字节数组 */
         data = new Uint8Array(val.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+        inputHex = val.toLowerCase();
       } else {
-        data = val;
+        /* ASCII字符串转字节数组 */
+        const encoder = new TextEncoder();
+        data = encoder.encode(val);
+        /* 转hex字符串 */
+        inputHex = Array.from(data).map(b => b.toString(16).padStart(2, '0')).join('');
       }
     } catch (e) {
       result.innerText = "❌ HEX 输入错误：" + e.message;
@@ -239,6 +246,9 @@ window.onload = function() {
     }
 
     try {
+      /* 统一第一行输出明文hex */
+      let output = `input data: 0x${inputHex}\n`;
+
       /* 模式1：所有算法计算 */
       if (calcMode === 'all') {
         const allAlgos = [
@@ -255,7 +265,6 @@ window.onload = function() {
           else promises.push(hw[a](data));
         }
         const res = await Promise.all(promises);
-        let output = '';
         for (let i = 0; i < allAlgos.length; i++) {
           output += `${allAlgos[i].toUpperCase().padEnd(12)}: ${res[i]}\n`;
         }
@@ -331,7 +340,8 @@ window.onload = function() {
         hashResult = await hw.xxhash128(data, sl, sh);
       }
 
-      result.innerText = `${algo.toUpperCase()}: ${hashResult}`;
+      output += `${algo.toUpperCase()}: ${hashResult}`;
+      result.innerText = output;
     } catch (err) {
       result.innerText = `❌ 计算失败：${err.message}`;
       console.error(err);
