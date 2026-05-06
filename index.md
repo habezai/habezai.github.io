@@ -39,7 +39,7 @@ layout: home
 
 ### 数值计算
 - [Sage Math](/docs/Tools/sagemath)
-- [OpenSSL](/docs/Tools/openssl)
+- [hash-wasm](/docs/Tools/hash-wasm)
 
 ### AUTOSAR CP之MCAL配置
 - [EB tresos](/docs/Tools/eb-tresos)
