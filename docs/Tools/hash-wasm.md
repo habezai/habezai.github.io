@@ -24,8 +24,16 @@ parent: Tools
     box-sizing: border-box;
     font-size: 14px;
     border: 1px solid #ccc;
-    border: 1px solid #ccc;
     border-radius: 6px;
+  }
+
+  #fileInput {
+    width: 100%;
+    padding: 8px;
+    margin: 6px 0 12px 0;
+    box-sizing: border-box;
+    font-size: 14px;
+    display: none;
   }
   
   /* 浅色占位符样式 */
@@ -102,14 +110,18 @@ parent: Tools
   <!-- 输入框标题提示 -->
   <div class="input-label">哈希算法输入内容</div>
   <textarea id="hashInput" placeholder="Hex示例输入: 1122eeff, ASCII示例输入:Text Example"></textarea>
+  <input type="file" id="fileInput">
 
-  <!-- 交换顺序 + 默认选中 Hex -->
+  <!-- 三选一：HEX / ASCII / 二进制文件导入 -->
   <div class="radio-group">
     <label class="radio-label">
       <input type="radio" name="inputMode" value="hex" checked> HEX 字符串输入
     </label>
     <label class="radio-label">
       <input type="radio" name="inputMode" value="ascii"> ASCII 字符串
+    </label>
+    <label class="radio-label">
+      <input type="radio" name="inputMode" value="file"> 二进制文件导入
     </label>
   </div>
 
@@ -168,6 +180,7 @@ window.onload = function() {
   /* 获取页面元素 */
   const btn = document.getElementById('calcBtn');
   const input = document.getElementById('hashInput');
+  const fileInput = document.getElementById('fileInput');
   const result = document.getElementById('resultArea');
   const algoSelect = document.getElementById('hashAlgorithm');
   const paramArea = document.getElementById('paramArea');
@@ -183,6 +196,23 @@ window.onload = function() {
     return;
   }
 
+  /* 切换输入模式：文本框 / 文件选择框 */
+  function switchInputMode() {
+    const mode = document.querySelector('input[name="inputMode"]:checked').value;
+    if (mode === 'file') {
+      input.style.display = 'none';
+      fileInput.style.display = 'block';
+    } else {
+      input.style.display = 'block';
+      fileInput.style.display = 'none';
+    }
+  }
+
+  /* 监听输入模式切换 */
+  inputModeRadios.forEach(radio => {
+    radio.addEventListener('change', switchInputMode);
+  });
+
   /* 绑定回车键触发计算 */
   input.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
@@ -194,62 +224,60 @@ window.onload = function() {
   /* 监听算法切换 */
   algoSelect.addEventListener('change', updateParamArea);
 
+  /* 读取文件为 Uint8Array */
+  function readFileAsUint8Array(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(new Uint8Array(reader.result));
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
   /* 计算按钮主逻辑 */
   btn.onclick = async function() {
     result.innerText = "⏳ 计算中...";
-    
-    /* 空值逻辑：未编辑 / 编辑后删空 都视为空字符串 */
-    const val = input.value.trim();
+    const inputMode = document.querySelector('input[name="inputMode"]:checked').value;
+    const calcMode = document.querySelector('input[name="calcMode"]:checked').value;
 
-    if (!val) {
-      result.innerText = "请输入内容";
-      return;
-    }
     if (!window.hashwasm) {
       result.innerText = "❌ hash-wasm 库加载失败";
       return;
     }
 
     const hw = window.hashwasm;
+    let data = new Uint8Array();
+    let output = '';
 
-    /* 获取用户选择的模式 */
-    const inputMode = document.querySelector('input[name="inputMode"]:checked').value;
-    const calcMode = document.querySelector('input[name="calcMode"]:checked').value;
-
-    /* 处理输入：ASCII 或 严格校验的HEX */
-    let data;
-    let inputHex = '';
     try {
-      if (inputMode === 'hex') {
-        /* 严格校验HEX格式：只允许 0-9 a-f A-F */
-        const hexRegex = /^[0-9a-fA-F]+$/;
-        if (!hexRegex.test(val)) {
-          throw new Error("包含非法字符（仅允许 0-9 a-f A-F）");
+      if (inputMode === 'file') {
+        const file = fileInput.files[0];
+        if (!file) {
+          result.innerText = "请选择文件";
+          return;
         }
-        /* 长度必须为偶数 */
-        if (val.length % 2 !== 0) {
-          throw new Error("长度必须为偶数");
-        }
-        /* 转换为字节数组 */
-        data = new Uint8Array(val.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-        inputHex = val.toLowerCase();
+        data = await readFileAsUint8Array(file);
+        /* 文件模式：只显示文件名和大小 */
+        output = `input file: ${file.name} (size: ${file.size} bytes)\n`;
       } else {
-        /* ASCII字符串转字节数组 */
-        const encoder = new TextEncoder();
-        data = encoder.encode(val);
-        /* 转hex字符串 */
-        inputHex = Array.from(data).map(b => b.toString(16).padStart(2, '0')).join('');
+        const val = input.value.trim();
+        if (inputMode === 'hex') {
+          if (val) {
+            const hexRegex = /^[0-9a-fA-F]+$/;
+            if (!hexRegex.test(val)) throw new Error("HEX包含非法字符");
+            if (val.length % 2 !== 0) throw new Error("HEX长度必须为偶数");
+            data = new Uint8Array(val.match(/.{1,2}/g).map(b => parseInt(b, 16)));
+          }
+        } else {
+          const encoder = new TextEncoder();
+          data = encoder.encode(val);
+        }
+        /* HEX / ASCII 模式：显示完整 hex */
+        const inputHex = Array.from(data).map(b => b.toString(16).padStart(2, '0')).join('');
+        output = `input data: 0x${inputHex}\n`;
       }
-    } catch (e) {
-      result.innerText = "❌ HEX 输入错误：" + e.message;
-      return;
-    }
 
-    try {
-      /* 统一第一行输出明文hex */
-      let output = `input data: 0x${inputHex}\n`;
-
-      /* 模式1：所有算法计算 */
+      /* 所有算法计算 */
       if (calcMode === 'all') {
         const allAlgos = [
           'md5','sha1','sha224','sha256','sha384','sha512',
@@ -272,69 +300,52 @@ window.onload = function() {
         return;
       }
 
-      /* 模式2：单算法计算 */
+      /* 单算法计算 */
       const algo = algoSelect.value;
       let hashResult = '';
-
-      /* 无参算法 */
       const simpleAlgos = [
         'md5','sha1','sha224','sha256','sha384','sha512',
         'md4','ripemd160','sm3','whirlpool','adler32'
       ];
 
-      if (simpleAlgos.includes(algo)) {
-        hashResult = await hw[algo](data);
-      }
-
-      /* SHA3 固定位数无参模式 */
+      if (simpleAlgos.includes(algo)) hashResult = await hw[algo](data);
       else if (algo === 'sha3-224') hashResult = await hw.sha3(data, 224);
       else if (algo === 'sha3-256') hashResult = await hw.sha3(data, 256);
       else if (algo === 'sha3-384') hashResult = await hw.sha3(data, 384);
       else if (algo === 'sha3-512') hashResult = await hw.sha3(data, 512);
-
-      /* 带参算法 */
       else if (algo === 'blake2b') {
         const bits = Number(document.getElementById('bits')?.value) || 512;
         const key = document.getElementById('key')?.value || '';
         hashResult = await hw.blake2b(data, bits, key);
-      }
-      else if (algo === 'blake2s') {
+      } else if (algo === 'blake2s') {
         const bits = Number(document.getElementById('bits')?.value) || 256;
         const key = document.getElementById('key')?.value || '';
         hashResult = await hw.blake2s(data, bits, key);
-      }
-      else if (algo === 'blake3') {
+      } else if (algo === 'blake3') {
         const bits = Number(document.getElementById('bits')?.value) || 256;
         const key = document.getElementById('key')?.value || '';
         hashResult = await hw.blake3(data, bits, key);
-      }
-      else if (algo === 'crc32') {
+      } else if (algo === 'crc32') {
         const poly = document.getElementById('poly')?.value || '0xedb88320';
         hashResult = await hw.crc32(data, eval(poly));
-      }
-      else if (algo === 'crc64') {
+      } else if (algo === 'crc64') {
         const poly = document.getElementById('poly')?.value || 'c96c5795d7870f42';
         hashResult = await hw.crc64(data, poly);
-      }
-      else if (algo === 'keccak') {
+      } else if (algo === 'keccak') {
         const bits = Number(document.getElementById('bits')?.value) || 512;
         hashResult = await hw.keccak(data, bits);
-      }
-      else if (algo === 'xxhash32') {
+      } else if (algo === 'xxhash32') {
         const seed = Number(document.getElementById('seed')?.value) || 0;
         hashResult = await hw.xxhash32(data, seed);
-      }
-      else if (algo === 'xxhash64') {
+      } else if (algo === 'xxhash64') {
         const sl = Number(document.getElementById('seedLow')?.value) || 0;
         const sh = Number(document.getElementById('seedHigh')?.value) || 0;
         hashResult = await hw.xxhash64(data, sl, sh);
-      }
-      else if (algo === 'xxhash3') {
+      } else if (algo === 'xxhash3') {
         const sl = Number(document.getElementById('seedLow')?.value) || 0;
         const sh = Number(document.getElementById('seedHigh')?.value) || 0;
         hashResult = await hw.xxhash3(data, sl, sh);
-      }
-      else if (algo === 'xxhash128') {
+      } else if (algo === 'xxhash128') {
         const sl = Number(document.getElementById('seedLow')?.value) || 0;
         const sh = Number(document.getElementById('seedHigh')?.value) || 0;
         hashResult = await hw.xxhash128(data, sl, sh);
@@ -343,12 +354,13 @@ window.onload = function() {
       output += `${algo.toUpperCase()}: ${hashResult}`;
       result.innerText = output;
     } catch (err) {
-      result.innerText = `❌ 计算失败：${err.message}`;
+      result.innerText = `❌ 错误：${err.message}`;
       console.error(err);
     }
   };
 
-  /* 初始化参数区域 */
+  /* 初始化 */
+  switchInputMode();
   updateParamArea();
 
   /* 动态更新参数输入框 */
@@ -356,33 +368,26 @@ window.onload = function() {
     const algo = algoSelect.value;
     paramArea.style.display = 'none';
     paramContent.innerHTML = '';
-
     const addInput = (id, label, def = '') => {
       paramContent.innerHTML += `<label>${label}: <input type="text" id="${id}" value="${def}"></label>`;
     };
-
     if (['blake2b', 'blake2s', 'blake3'].includes(algo)) {
       paramArea.style.display = 'block';
       addInput('bits', '位数', '512');
       addInput('key', '密钥(可选)', '');
-    }
-    else if (algo === 'crc32') {
+    } else if (algo === 'crc32') {
       paramArea.style.display = 'block';
       addInput('poly', '多项式', '0xedb88320');
-    }
-    else if (algo === 'crc64') {
+    } else if (algo === 'crc64') {
       paramArea.style.display = 'block';
       addInput('poly', '多项式', 'c96c5795d7870f42');
-    }
-    else if (algo === 'keccak') {
+    } else if (algo === 'keccak') {
       paramArea.style.display = 'block';
       addInput('bits', '位数(224/256/384/512)', '512');
-    }
-    else if (algo === 'xxhash32') {
+    } else if (algo === 'xxhash32') {
       paramArea.style.display = 'block';
       addInput('seed', '种子', '0');
-    }
-    else if (['xxhash64', 'xxhash3', 'xxhash128'].includes(algo)) {
+    } else if (['xxhash64', 'xxhash3', 'xxhash128'].includes(algo)) {
       paramArea.style.display = 'block';
       addInput('seedLow', '种子低32位', '0');
       addInput('seedHigh', '种子高32位', '0');
