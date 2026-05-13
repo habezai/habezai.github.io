@@ -9,8 +9,10 @@ layout: home
 ## Table of contents
 {: .no_toc .text-delta }
 
-1. TOC
-{:toc}
+<nav class="right-toc" markdown="1">
+  1. 目录
+  {:toc}
+</nav>
 
 ## [经验分享](/docs/Experience/)
 - 快速开发
@@ -38,19 +40,20 @@ layout: home
 - [just-the-docs](/docs/Tools/just-the-docs)
 
 ### 数值计算
-- [Sage Math](/docs/Tools/sagemath)
-- [hash-wasm](/docs/Tools/hash-wasm)
+- [Sage Math公钥密码学计算神器](/docs/Tools/sagemath)
+- [Hash-Tool在线计算哈希值](/docs/Tools/hash-wasm)
+- [ECDSA签名格式转换:ASN.1 \<\=\> R \|\| S](/docs/Tools/ecdsa-signature-converter)
 
 ### AUTOSAR CP之MCAL配置
 - [EB tresos](/docs/Tools/eb-tresos)
 
-### 汽车电子嵌入式编译
+### 嵌入式编译--汽车电子
 - [Hightech](/docs/Tools/hightech)
 - [Tasking](/docs/Tools/tasking)
 - [GHS](/docs/Tools/greenhills)
 - [S32DS](/docs/Tools/s32ds)
 
-### 汽车电子嵌入式调试
+### 嵌入式调试--汽车电子
 - [Trace32](/docs/Tools/trace32)
 - [UDE](/docs/Tools/ude)
 - [GHS](/docs/Tools/greenhills)
