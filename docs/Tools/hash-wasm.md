@@ -25,6 +25,7 @@ parent: Tools
     font-size: 14px;
     border: 1px solid #ccc;
     border-radius: 6px;
+    spellcheck: false;
   }
 
   #fileInput {
@@ -176,6 +177,58 @@ parent: Tools
 <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4.12.0/dist/index.umd.min.js"></script>
 
 <script>
+/* ===================== 历史记录模块 ===================== */
+/* 本地存储键名 */
+const HIST_KEY_HASH = "hash_input_history";
+/* 历史索引 */
+let hashHistIndex = -1;
+/* 临时缓存 */
+let hashTempCache = "";
+/* 最大历史条数 */
+const MAX_HASH_HIST = 50;
+
+/* 获取历史 */
+function getHashHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(HIST_KEY_HASH)) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+/* 保存历史 */
+function saveHashHistory(val) {
+  if (!val.trim()) return;
+  let h = getHashHistory();
+  h = h.filter(x => x !== val);
+  h.unshift(val);
+  if (h.length > MAX_HASH_HIST) h = h.slice(0, MAX_HASH_HIST);
+  localStorage.setItem(HIST_KEY_HASH, JSON.stringify(h));
+  hashHistIndex = -1;
+}
+
+/* 绑定上下键 */
+function bindHashHistoryKeys() {
+  const el = document.getElementById("hashInput");
+  el.addEventListener("keydown", function (e) {
+    const h = getHashHistory();
+    if (h.length === 0) return;
+
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (hashHistIndex === -1) hashTempCache = el.value;
+      if (hashHistIndex < h.length - 1) hashHistIndex++;
+      el.value = h[hashHistIndex] || "";
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (hashHistIndex > -1) hashHistIndex--;
+      el.value = hashHistIndex === -1 ? hashTempCache : (h[hashHistIndex] || "");
+    }
+  });
+}
+/* ===================== 历史记录模块结束 ===================== */
+
 window.onload = function() {
   /* 获取页面元素 */
   const btn = document.getElementById('calcBtn');
@@ -195,6 +248,9 @@ window.onload = function() {
     result.innerText = "❌ 页面元素加载失败";
     return;
   }
+
+  /* 初始化历史记录按键 */
+  bindHashHistoryKeys();
 
   /* 切换输入模式：文本框 / 文件选择框 */
   function switchInputMode() {
@@ -261,6 +317,9 @@ window.onload = function() {
         output = `input file: ${file.name} (size: ${file.size} bytes)\n`;
       } else {
         const val = input.value.trim();
+        /* 保存输入历史 */
+        saveHashHistory(val);
+
         if (inputMode === 'hex') {
           if (val) {
             const hexRegex = /^[0-9a-fA-F]+$/;
