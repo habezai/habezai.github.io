@@ -23,9 +23,12 @@ sagecell.makeSagecell({
 });
 
 sagecell.makeSagecell({
-    inputLocation: '.linkedCellGroup1',
-    evalButtonText: '执行脚本'
-});
+    inputLocation: '.sagecell-linked-demo1', 
+    replaceOutput: true,
+    autoeval: false,
+    linked: true,
+    hide: ['messages', 'computationID', 'files', 'sageMode', 'editorToggle', 'sessionTitle', 'done', 'permalink'],
+    evalButtonText: 'linked demo 执行!'});
 </script>
 
 ## 微积分领域
@@ -307,7 +310,96 @@ show(a)
 </pre>
 </div>
 
+## 链接多个cell的计算
+<div class="sagecell-linked-demo1">
+<pre style="display: none;">
+<script type="text/x-sage">
+def myFunc(n):
+    return 'Yes, myFunc(' + str(n) + ') is called'
+myFunc(1)
+</script>
+</pre>
+</div>
 
+<div class="sagecell-linked-demo1">
+<pre style="display: none;">
+<script type="text/x-sage">
+    print(myFunc(2))
+</script>
+</pre>
+</div>
+
+## 交互式傅里叶级数演示
+
+<div class="compute">
+<pre style="display: none;">
+<script type="text/x-sage">
+## 原理：用三角函数叠加，逼近方波、锯齿波、抛物线波
+## 参考来源：http://www.walkingrandomly.com/?p=1879
+# ------------------------------
+# 1. 定义三个波形的 傅里叶单项（每一个谐波项）
+# ------------------------------
+
+# 方波：第 n 个正弦项
+def ftermSquare(n):
+    # 方波的傅里叶级数：只含奇数项的正弦波
+    return (1/n * sin(n*x*pi/3))
+
+# 锯齿波：第 n 个正弦项
+def ftermSawtooth(n):
+    # 锯齿波的傅里叶项（和方波单项公式一样，但组合方式不同）
+    return (1/n * sin(n*x*pi/3))
+
+# 抛物线波（周期抛物曲线）：第 n 个余弦项
+def ftermParabola(n):
+    # 抛物线波由余弦波构成，带 (-1)^n 符号交替
+    return ((-1)^n / n^2 * cos(n*x))
+
+# ------------------------------
+# 2. 定义三个波形的 傅里叶级数（叠加 n 项求和）
+# ------------------------------
+
+# 方波：叠加 n 组谐波（只取奇数项：1,3,5...）
+def fseriesSquare(n):
+    # 方波标准傅里叶公式：(4/π) * Σ(1/k sin(kx))
+    return (4/pi * sum(ftermSquare(i) for i in range(1, 2*n, 2)))
+
+# 锯齿波：叠加 n 项
+def fseriesSawtooth(n):
+    # 锯齿波标准傅里叶公式：1/2 - (1/π)Σ(1/k sin(kx))
+    return (1/2 - 1/pi * sum(ftermSawtooth(i) for i in range(1, n)))
+
+# 周期抛物线波：叠加 n 项
+def fseriesParabola(n):
+    # 抛物线傅里叶公式：π²/3 + 4Σ((-1)^k /k² cos(kx))
+    return (pi^2/3 + 4 * sum(ftermParabola(i) for i in range(1, n)))
+
+# ------------------------------
+# 3. 交互式控件：滑块 + 下拉菜单
+# ------------------------------
+@interact
+def plotFourier(
+    # 滑块：控制傅里叶项数 n，从 1 到 30，默认 3
+    n=slider(1, 30, 1, 3, label='Number of terms(傅里叶项数)'),
+    
+    # 下拉菜单：选择三种波形
+    Function=['Square Wave(方波)','Saw Tooth(锯齿波)','Periodic Parabola(周期抛物线)']
+):
+    # 根据选择的函数，画出对应的傅里叶级数图像
+    if Function == 'Saw Tooth(锯齿波)':
+        # 画锯齿波，x范围：-6 到 6
+        show(plot(fseriesSawtooth(n), x, -6, 6, figsize=(7,3)))
+        
+    if Function == 'Square Wave(方波)':
+        # 画方波
+        show(plot(fseriesSquare(n), x, -6, 6, figsize=(7,3)))
+        
+    if Function == 'Periodic Parabola(周期抛物线)':
+        # 画周期抛物线
+        show(plot(fseriesParabola(n), x, -6, 6, figsize=(7,3)))
+</script>
+</pre>
+</div>
 
 ## 交互式得到 $2^n$ 的值
 <div class="compute">
