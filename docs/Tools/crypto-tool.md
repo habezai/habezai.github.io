@@ -21,9 +21,9 @@ textarea { min-height: 100px; resize: vertical; }
 }
 .btn-danger { background: #dc3544; }
 .btn-success { background: #28a745; }
-.btn-group { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.btn-group { display: flex; wrap: wrap; gap: 8px; margin: 8px 0; }
 .result {
-    background: #f6f8fa; padding: 12px; border-radius: 6px;
+    background-color: #f6f8fa; padding: 12px; border-radius: 6px;
     font-family: Consolas, monospace; white-space: pre-wrap; word-break: break-all;
     min-height: 60px; margin-top: 10px;
 }
@@ -56,7 +56,7 @@ textarea { min-height: 100px; resize: vertical; }
 .file-input {
     padding: 6px;
     border: 1px dashed #888;
-    background: #fafafa;
+    background-color: #fafafa;
 }
 .file-hint {
     font-size: 12px;
@@ -113,16 +113,33 @@ textarea { min-height: 100px; resize: vertical; }
 <div id="hmac" class="tab-content">
     <div class="section">
         <div class="title">HMAC 消息认证码</div>
-        <div class="label">消息</div>
-        <textarea id="hmacMsg" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
-        <div class="label">密钥（HEX）</div>
-        <input id="hmacKey" spellcheck="false" autocorrect="off" autocapitalize="off">
-        <select id="hmacAlgo">
-            <option>sha256</option>
-            <option>sha512</option>
-            <option>sm3</option>
+
+        <div class="label">消息输入模式</div>
+        <select id="hmacInputMode">
+            <option value="hex">HEX 模式</option>
+            <option value="utf8">UTF-8 文本模式</option>
+            <option value="base64">Base64 模式</option>
         </select>
-        <button class="btn" onclick="doHmac()">计算 HMAC</button>
+
+        <div class="label" style="margin-top:8px;">消息内容</div>
+        <textarea id="hmacMsg" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        <div class="error-hint" id="hmacErrorHint"></div>
+
+        <div class="label" style="margin-top:8px;">密钥输入模式</div>
+        <select id="hmacKeyMode">
+            <option value="hex">HEX 模式</option>
+            <option value="utf8">UTF-8 文本模式</option>
+            <option value="base64">Base64 模式</option>
+        </select>
+
+        <div class="label" style="margin-top:8px;">密钥</div>
+        <input id="hmacKey" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" />
+        <div class="error-hint" id="hmacKeyErrorHint"></div>
+
+        <div class="label" style="margin-top:8px;">哈希算法</div>
+        <select id="hmacAlgo"></select>
+
+        <button class="btn" style="margin-top:8px;" onclick="doHmac()">计算 HMAC</button>
         <div class="result" id="hmacResult"></div>
     </div>
 </div>
@@ -211,315 +228,177 @@ textarea { min-height: 100px; resize: vertical; }
 <script src="https://cdn.jsdelivr.net/npm/node-forge@1.3.1/dist/forge.min.js"></script>
 
 <script>
-/* 工具函数：HEX 转 Uint8Array */
+/* 工具函数 */
 function hexToBytes(hex) {
     hex = hex.replace(/^0x/, '').replace(/\s/g, '');
     if (hex.length % 2 !== 0) throw new Error('HEX 长度必须为偶数');
     const bytes = [];
-    for (let i = 0; i < hex.length; i += 2) {
-        bytes.push(parseInt(hex.substr(i, 2), 16));
-    }
+    for (let i = 0; i < hex.length; i += 2) bytes.push(parseInt(hex.substr(i, 2), 16));
     return new Uint8Array(bytes);
 }
+function base64ToBytes(b64) { try { const bin = atob(b64); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); return bytes; } catch (e) { throw new Error('Base64 格式无效'); } }
+function isValidBase64(str) { try { btoa(atob(str)); return true; } catch (e) { return false; } }
+function readFileAsUint8Array(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(new Uint8Array(reader.result)); reader.onerror = reject; reader.readAsArrayBuffer(file); }); }
 
-/* 工具函数：Base64 转 Uint8Array */
-function base64ToBytes(b64) {
-    try {
-        const bin = atob(b64);
-        const len = bin.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-            bytes[i] = bin.charCodeAt(i);
-        }
-        return bytes;
-    } catch (e) {
-        throw new Error('Base64 格式无效');
-    }
-}
-
-/* 工具函数：验证 Base64 格式 */
-function isValidBase64(str) {
-    try {
-        btoa(atob(str));
-        return true;
-    } catch (e) {
-        return false;
-    }
-}
-
-/* 异步读取文件为 Uint8Array */
-function readFileAsUint8Array(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(new Uint8Array(reader.result));
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(file);
-    });
-}
+/* 历史记录 */
+const inputHistory = { list: [], index: -1, current: "", add(v){ v=v.trim(); if(!v||this.list[0]===v)return; this.list=[v,...this.list.filter(x=>x!==v)].slice(0,30); this.index=-1; }, up(){ if(this.list.length===0)return""; if(this.index===-1){this.current=document.getElementById("hashInput").value;this.index=0;}else this.index=Math.min(this.index+1,this.list.length-1);return this.list[this.index];}, down(){ if(this.index<=-1)return"";this.index--;return this.index<0?this.current:this.list[this.index];} };
+const hmacMsgHistory = { list: [], index: -1, current: "", add(v){ v=v.trim(); if(!v||this.list[0]===v)return; this.list=[v,...this.list.filter(x=>x!==v)].slice(0,30); this.index=-1; }, up(){ if(this.list.length===0)return""; if(this.index===-1){this.current=document.getElementById("hmacMsg").value;this.index=0;}else this.index=Math.min(this.index+1,this.list.length-1);return this.list[this.index];}, down(){ if(this.index<=-1)return"";this.index--;return this.index<0?this.current:this.list[this.index];} };
+const hmacKeyHistory = { list: [], index: -1, current: "", add(v){ v=v.trim(); if(!v||this.list[0]===v)return; this.list=[v,...this.list.filter(x=>x!==v)].slice(0,30); this.index=-1; }, up(){ if(this.list.length===0)return""; if(this.index===-1){this.current=document.getElementById("hmacKey").value;this.index=0;}else this.index=Math.min(this.index+1,this.list.length-1);return this.list[this.index];}, down(){ if(this.index<=-1)return"";this.index--;return this.index<0?this.current:this.list[this.index];} };
 
 let hw;
 
-/* 输入历史管理（↑ ↓ 键切换）*/
-const inputHistory = {
-    list: [],
-    index: -1,
-    current: "",
-    add(value) {
-        value = value.trim();
-        if (!value) return;
-        if (this.list[0] === value) return;
-        this.list = [value, ...this.list.filter(item => item !== value)].slice(0, 30);
-        this.index = -1;
-    },
-    up() {
-        if (this.list.length === 0) return "";
-        if (this.index === -1) {
-            this.current = document.getElementById("hashInput").value;
-            this.index = 0;
-        } else {
-            this.index = Math.min(this.index + 1, this.list.length - 1);
-        }
-        return this.list[this.index];
-    },
-    down() {
-        if (this.index <= -1) return "";
-        this.index--;
-        if (this.index < 0) {
-            return this.current;
-        }
-        return this.list[this.index];
-    }
-};
+/* 全局校验函数 */
+function validateHash() {
+    const mode = document.getElementById('hashInputMode').value;
+    const input = document.getElementById('hashInput');
+    const err = document.getElementById('hashErrorHint');
+    const v = input.value.trim();
+    input.classList.remove('input-error'); err.style.display = 'none';
+    if (mode === 'hex' && !/^[0-9a-fA-F]*$/.test(v)) { input.classList.add('input-error'); err.innerText = '❌ 仅支持 0-9、a-f、A-F'; err.style.display = 'block'; return false; }
+    if (mode === 'base64' && v && !isValidBase64(v)) { input.classList.add('input-error'); err.innerText = '❌ Base64 格式无效'; err.style.display = 'block'; return false; }
+    return true;
+}
+function validateHmacMsg() {
+    const mode = document.getElementById('hmacInputMode').value;
+    const input = document.getElementById('hmacMsg');
+    const err = document.getElementById('hmacErrorHint');
+    const v = input.value.trim();
+    input.classList.remove('input-error'); err.style.display = 'none';
+    if (mode === 'hex' && !/^[0-9a-fA-F]*$/.test(v)) { input.classList.add('input-error'); err.innerText = '❌ 仅支持 0-9、a-f、A-F'; err.style.display = 'block'; return false; }
+    if (mode === 'base64' && v && !isValidBase64(v)) { input.classList.add('input-error'); err.innerText = '❌ Base64 格式无效'; err.style.display = 'block'; return false; }
+    return true;
+}
+function validateHmacKey() {
+    const mode = document.getElementById('hmacKeyMode').value;
+    const input = document.getElementById('hmacKey');
+    const err = document.getElementById('hmacKeyErrorHint');
+    const v = input.value.trim();
+    input.classList.remove('input-error'); err.style.display = 'none';
+    if (mode === 'hex' && !/^[0-9a-fA-F]*$/.test(v)) { input.classList.add('input-error'); err.innerText = '❌ 仅支持 0-9、a-f、A-F'; err.style.display = 'block'; return false; }
+    if (mode === 'base64' && v && !isValidBase64(v)) { input.classList.add('input-error'); err.innerText = '❌ Base64 格式无效'; err.style.display = 'block'; return false; }
+    return true;
+}
 
-/* 初始化页面 */
+/* 初始化 */
 window.onload = async () => {
     hw = window.hashwasm || hashwasm;
     showTab('hash');
 
-    /* 填充哈希算法 */
-    const algoList = [
-        "md5", "sha1", "sha224", "sha256", "sha384", "sha512",
-        "sha3-224", "sha3-256", "sha3-384", "sha3-512",
-        "md4", "ripemd160", "sm3", "whirlpool", "adler32"
-    ];
-    const sel = document.getElementById('hashAlgo');
-    algoList.forEach(a => {
-        const opt = document.createElement('option');
-        opt.value = a;
-        opt.innerText = a.toUpperCase();
-        sel.appendChild(opt);
-    });
+    const hashAlgos = ["md5","sha1","sha224","sha256","sha384","sha512","sha3-224","sha3-256","sha3-384","sha3-512","md4","ripemd160","sm3","whirlpool","adler32"];
+    const hmacAlgos = ["md5","sha1","sha224","sha256","sha384","sha512","sha3-224","sha3-256","sha3-384","sha3-512","md4","ripemd160","sm3","whirlpool"];
+    
+    hashAlgos.forEach(a => { const o = document.createElement('option'); o.value = a; o.innerText = a.toUpperCase(); document.getElementById('hashAlgo').appendChild(o); });
+    hmacAlgos.forEach(a => { const o = document.createElement('option'); o.value = a; o.innerText = a.toUpperCase(); document.getElementById('hmacAlgo').appendChild(o); });
 
     /* 哈希模式切换 */
-    const modeSel = document.getElementById('hashInputMode');
-    const inputArea = document.getElementById('hashInputArea');
-    const fileArea = document.getElementById('hashFileArea');
-    const hashInput = document.getElementById('hashInput');
-    const errorHint = document.getElementById('hashErrorHint');
-
-    modeSel.addEventListener('change', () => {
-        const m = modeSel.value;
-        if (m === 'file') {
-            inputArea.style.display = 'none';
-            fileArea.style.display = 'block';
-        } else {
-            inputArea.style.display = 'block';
-            fileArea.style.display = 'none';
-        }
-        hashInput.classList.remove('input-error');
-        errorHint.style.display = 'none';
+    const hashMode = document.getElementById('hashInputMode');
+    const hashFileArea = document.getElementById('hashFileArea');
+    const hashInputArea = document.getElementById('hashInputArea');
+    hashMode.addEventListener('change', () => {
+        if (hashMode.value === 'file') { hashInputArea.style.display = 'none'; hashFileArea.style.display = 'block'; }
+        else { hashInputArea.style.display = 'block'; hashFileArea.style.display = 'none'; }
+        document.getElementById('hashInput').classList.remove('input-error');
+        document.getElementById('hashErrorHint').style.display = 'none';
     });
 
-    /* 实时输入校验 */
-    function validateInput() {
-        const mode = modeSel.value;
-        const val = hashInput.value.trim();
-        hashInput.classList.remove('input-error');
-        errorHint.style.display = 'none';
+    /* 绑定事件 */
+    document.getElementById('hashInput').addEventListener('input', validateHash);
+    document.getElementById('hmacMsg').addEventListener('input', validateHmacMsg);
+    document.getElementById('hmacKey').addEventListener('input', validateHmacKey);
 
-        if (mode === 'hex') {
-            if (!/^[0-9a-fA-F]*$/.test(val)) {
-                hashInput.classList.add('input-error');
-                errorHint.innerText = '❌ 仅支持 0-9、a-f、A-F';
-                errorHint.style.display = 'block';
-                return false;
-            }
-        }
-        if (mode === 'base64') {
-            if (val && !isValidBase64(val)) {
-                hashInput.classList.add('input-error');
-                errorHint.innerText = '❌ Base64 格式无效';
-                errorHint.style.display = 'block';
-                return false;
-            }
-        }
-        return true;
-    }
-
-    hashInput.addEventListener('input', validateInput);
-    window.validateHashInput = validateInput;
-
-    /* 上下方向键历史输入 */
-    hashInput.addEventListener('keydown', (e) => {
-        if (modeSel.value === 'file') return;
-        if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            hashInput.value = inputHistory.up();
-        } else if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            hashInput.value = inputHistory.down();
-        }
+    /* 方向键历史 */
+    document.getElementById('hashInput').addEventListener('keydown', e => {
+        if (document.getElementById('hashInputMode').value === 'file') return;
+        if (e.key === 'ArrowUp') { e.preventDefault(); document.getElementById('hashInput').value = inputHistory.up(); }
+        if (e.key === 'ArrowDown') { e.preventDefault(); document.getElementById('hashInput').value = inputHistory.down(); }
+    });
+    document.getElementById('hmacMsg').addEventListener('keydown', e => {
+        if (e.key === 'ArrowUp') { e.preventDefault(); document.getElementById('hmacMsg').value = hmacMsgHistory.up(); }
+        if (e.key === 'ArrowDown') { e.preventDefault(); document.getElementById('hmacMsg').value = hmacMsgHistory.down(); }
+    });
+    document.getElementById('hmacKey').addEventListener('keydown', e => {
+        if (e.key === 'ArrowUp') { e.preventDefault(); document.getElementById('hmacKey').value = hmacKeyHistory.up(); }
+        if (e.key === 'ArrowDown') { e.preventDefault(); document.getElementById('hmacKey').value = hmacKeyHistory.down(); }
     });
 };
 
 /* 标签切换 */
 function showTab(tabName) {
-    const tabMap = {
-        'hash':'哈希','hmac':'HMAC','aes':'AES/SM4','rsa':'RSA','random':'随机数','encode':'编码'
-    };
-    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    const target = document.getElementById(tabName);
-    if(target) target.classList.add('active');
-    const targetText = tabMap[tabName];
-    document.querySelectorAll('.tab').forEach(tab=>{
-        if(tab.innerText.trim()===targetText) tab.classList.add('active');
-    });
+    const tabMap = { hash:'哈希', hmac:'HMAC', aes:'AES/SM4', rsa:'RSA', random:'随机数', encode:'编码' };
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const tar = document.getElementById(tabName); if (tar) tar.classList.add('active');
+    document.querySelectorAll('.tab').forEach(t => t.innerText.trim() === tabMap[tabName] && t.classList.add('active'));
 }
 
-/* 编码转换 */
+/* 编码 */
 function doEnc(to) {
     const i = document.getElementById('encInput').value;
-    let u = new TextEncoder().encode(i);
+    const u = new TextEncoder().encode(i);
     let r = '';
-    if (to === 'hex') r = Array.from(u).map(x=>x.toString(16).padStart(2,'0')).join('');
+    if (to === 'hex') r = Array.from(u).map(x => x.toString(16).padStart(2, '0')).join('');
     if (to === 'b64') r = btoa(String.fromCharCode(...u));
-    if (to === 'b64url') r = btoa(String.fromCharCode(...u)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+    if (to === 'b64url') r = btoa(String.fromCharCode(...u)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     if (to === 'utf8') r = new TextDecoder().decode(u);
     document.getElementById('encResult').innerText = r;
 }
 
-/* 哈希计算 */
+/* 哈希 */
 async function doHash() {
-    const res = document.getElementById('hashResult');
-    res.innerText = "⏳ 计算中...";
+    const res = document.getElementById('hashResult'); res.innerText = "⏳ 计算中...";
     try {
         const mode = document.getElementById('hashInputMode').value;
         const algo = document.getElementById('hashAlgo').value;
-        let data;
-        let inputText = "";
+        let data, text = "";
 
-        if (mode === 'hex') {
-            if (!window.validateHashInput()) throw new Error("HEX 输入无效");
-            inputText = document.getElementById('hashInput').value.trim();
-            data = inputText ? hexToBytes(inputText) : new Uint8Array();
-        } else if (mode === 'utf8') {
-            inputText = document.getElementById('hashInput').value.trim();
-            data = new TextEncoder().encode(inputText);
-        } else if (mode === 'base64') {
-            if (!window.validateHashInput()) throw new Error("Base64 输入无效");
-            inputText = document.getElementById('hashInput').value.trim();
-            data = inputText ? base64ToBytes(inputText) : new Uint8Array();
-        } else if (mode === 'file') {
-            const fileIn = document.getElementById('hashFileInput');
-            if (!fileIn.files?.length) throw new Error("请选择文件");
-            data = await readFileAsUint8Array(fileIn.files[0]);
-        }
+        if (mode === 'hex') { if (!validateHash()) throw new Error("HEX 输入无效"); text = document.getElementById('hashInput').value.trim(); data = text ? hexToBytes(text) : new Uint8Array(); }
+        else if (mode === 'utf8') { text = document.getElementById('hashInput').value.trim(); data = new TextEncoder().encode(text); }
+        else if (mode === 'base64') { if (!validateHash()) throw new Error("Base64 输入无效"); text = document.getElementById('hashInput').value.trim(); data = text ? base64ToBytes(text) : new Uint8Array(); }
+        else if (mode === 'file') { const f = document.getElementById('hashFileInput').files[0]; if (!f) throw new Error("请选择文件"); data = await readFileAsUint8Array(f); }
 
-        /* 加入历史 */
-        if (mode !== 'file' && inputText) {
-            inputHistory.add(inputText);
-        }
-
-        let out;
-        if (algo.startsWith('sha3-')) {
-            const bits = parseInt(algo.split('-')[1]);
-            out = await hw.sha3(data, bits);
-        } else {
-            out = await hw[algo](data);
-        }
+        if (mode !== 'file') inputHistory.add(text);
+        let out = algo.startsWith('sha3-') ? await hw.sha3(data, parseInt(algo.split('-')[1])) : await hw[algo](data);
         res.innerText = out.toUpperCase();
-    } catch (e) {
-        res.innerText = "❌ 错误：" + e.message;
-    }
+    } catch (e) { res.innerText = "❌ 错误：" + e.message; }
 }
 
 /* HMAC */
 async function doHmac() {
+    const res = document.getElementById('hmacResult'); res.innerText = "⏳ 计算中...";
     try {
-        const msg = new TextEncoder().encode(document.getElementById('hmacMsg').value);
-        const key = hexToBytes(document.getElementById('hmacKey').value||'00');
-        const r = await hw.hmac(msg, key, document.getElementById('hmacAlgo').value);
-        document.getElementById('hmacResult').innerText = r;
-    } catch (e) {
-        document.getElementById('hmacResult').innerText = "❌ 失败："+e.message;
-    }
+        const msgMode = document.getElementById('hmacInputMode').value;
+        const keyMode = document.getElementById('hmacKeyMode').value;
+        const algo = document.getElementById('hmacAlgo').value;
+        const msgVal = document.getElementById('hmacMsg').value.trim();
+        const keyVal = document.getElementById('hmacKey').value.trim();
+
+        if (!validateHmacMsg()) throw new Error("消息格式无效");
+        if (!validateHmacKey()) throw new Error("密钥格式无效");
+        if (!keyVal) throw new Error("密钥不能为空");
+
+        let msg = msgMode === 'hex' ? (msgVal ? hexToBytes(msgVal) : new Uint8Array()) :
+                 msgMode === 'utf8' ? new TextEncoder().encode(msgVal) : (msgVal ? base64ToBytes(msgVal) : new Uint8Array());
+
+        let key = keyMode === 'hex' ? hexToBytes(keyVal) :
+                  keyMode === 'utf8' ? new TextEncoder().encode(keyVal) : base64ToBytes(keyVal);
+
+        hmacMsgHistory.add(msgVal);
+        hmacKeyHistory.add(keyVal);
+
+        const out = await hw.hmac(key, msg, algo);
+        res.innerText = out.toUpperCase();
+    } catch (e) { res.innerText = "❌ 错误：" + e.message; }
 }
 
-/* AES 加密 */
-async function doSymEnc() {
-    try {
-        const algo = document.getElementById('symAlgo').value;
-        const plain = new TextEncoder().encode(document.getElementById('symPlain').value);
-        const key = hexToBytes(document.getElementById('symKey').value);
-        const iv = hexToBytes(document.getElementById('symIv').value);
-        const out = algo.startsWith('aes') ? await hw.aesCbcEncrypt(plain,key,iv) : await hw.sm4Encrypt(plain,key,iv);
-        document.getElementById('symResult').innerText = out;
-    } catch (e) {
-        document.getElementById('symResult').innerText = "❌ 加密失败："+e.message;
-    }
-}
-
-/* AES 解密 */
-async function doSymDec() {
-    try {
-        const algo = document.getElementById('symAlgo').value;
-        const ct = document.getElementById('symPlain').value;
-        const key = hexToBytes(document.getElementById('symKey').value);
-        const iv = hexToBytes(document.getElementById('symIv').value);
-        const out = algo.startsWith('aes') ? await hw.aesCbcDecrypt(ct,key,iv) : await hw.sm4Decrypt(ct,key,iv);
-        document.getElementById('symResult').innerText = new TextDecoder().decode(out);
-    } catch (e) {
-        document.getElementById('symResult').innerText = "❌ 解密失败："+e.message;
-    }
-}
+/* AES */
+async function doSymEnc() { try { const a=document.getElementById('symAlgo').value; const p=new TextEncoder().encode(document.getElementById('symPlain').value); const k=hexToBytes(document.getElementById('symKey').value); const i=hexToBytes(document.getElementById('symIv').value); const o=a.startsWith('aes')?await hw.aesCbcEncrypt(p,k,i):await hw.sm4Encrypt(p,k,i); document.getElementById('symResult').innerText=o; }catch(e){document.getElementById('symResult').innerText="❌ 加密失败："+e.message;}}
+async function doSymDec() { try { const a=document.getElementById('symAlgo').value; const c=document.getElementById('symPlain').value; const k=hexToBytes(document.getElementById('symKey').value); const i=hexToBytes(document.getElementById('symIv').value); const o=a.startsWith('aes')?await hw.aesCbcDecrypt(c,k,i):await hw.sm4Decrypt(c,k,i); document.getElementById('symResult').innerText=new TextDecoder().decode(o); }catch(e){document.getElementById('symResult').innerText="❌ 解密失败："+e.message;}}
 
 /* RSA */
-function genRSA() {
-    const k = forge.pki.rsa.generateKeyPair(2048);
-    document.getElementById('rsaPub').value = forge.pki.publicKeyToPem(k.publicKey);
-    document.getElementById('rsaPriv').value = forge.pki.privateKeyToPem(k.privateKey);
-}
-function doRsaEnc() {
-    try {
-        const pub = forge.pki.publicKeyFromPem(document.getElementById('rsaPub').value);
-        const out = pub.encrypt(forge.util.encodeUtf8(document.getElementById('rsaPlain').value));
-        document.getElementById('rsaResult').innerText = forge.util.bytesToHex(out);
-    } catch (e) {
-        document.getElementById('rsaResult').innerText = "❌ 加密失败："+e.message;
-    }
-}
-function doRsaDec() {
-    try {
-        const priv = forge.pki.privateKeyFromPem(document.getElementById('rsaPriv').value);
-        const out = priv.decrypt(forge.util.hexToBytes(document.getElementById('rsaPlain').value));
-        document.getElementById('rsaResult').innerText = forge.util.decodeUtf8(out);
-    } catch (e) {
-        document.getElementById('rsaResult').innerText = "❌ 解密失败："+e.message;
-    }
-}
+function genRSA(){const k=forge.pki.rsa.generateKeyPair(2048);document.getElementById('rsaPub').value=forge.pki.publicKeyToPem(k.publicKey);document.getElementById('rsaPriv').value=forge.pki.privateKeyToPem(k.privateKey);}
+function doRsaEnc(){try{const p=forge.pki.publicKeyFromPem(document.getElementById('rsaPub').value);const o=p.encrypt(forge.util.encodeUtf8(document.getElementById('rsaPlain').value));document.getElementById('rsaResult').innerText=forge.util.bytesToHex(o);}catch(e){document.getElementById('rsaResult').innerText="❌ 加密失败："+e.message;}}
+function doRsaDec(){try{const p=forge.pki.privateKeyFromPem(document.getElementById('rsaPriv').value);const o=p.decrypt(forge.util.hexToBytes(document.getElementById('rsaPlain').value));document.getElementById('rsaResult').innerText=forge.util.decodeUtf8(o);}catch(e){document.getElementById('rsaResult').innerText="❌ 解密失败："+e.message;}}
 
 /* 随机数 */
-function doRand() {
-    try {
-        const l = parseInt(document.getElementById('randLen').value);
-        if(l<1||l>1024) throw new Error("长度 1~1024");
-        const buf = crypto.getRandomValues(new Uint8Array(l));
-        const fmt = document.getElementById('randFormat').value;
-        const out = fmt==='hex' ? Array.from(buf).map(x=>x.toString(16).padStart(2,'0')).join('') : btoa(String.fromCharCode(...buf));
-        document.getElementById('randResult').innerText = out;
-    } catch (e) {
-        document.getElementById('randResult').innerText = "❌ 失败："+e.message;
-    }
-}
+function doRand(){try{const l=parseInt(document.getElementById('randLen').value);if(l<1||l>1024)throw new Error("长度 1~1024");const b=crypto.getRandomValues(new Uint8Array(l));const f=document.getElementById('randFormat').value;const o=f==='hex'?Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join(''):btoa(String.fromCharCode(...b));document.getElementById('randResult').innerText=o;}catch(e){document.getElementById('randResult').innerText="❌ 失败："+e.message;}}
 </script>
