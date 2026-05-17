@@ -1,5 +1,5 @@
 ---
-title: 密码工具箱
+title: (实用工具)密码学工具箱
 parent: Tools
 ---
 
@@ -9,7 +9,7 @@ parent: Tools
 .crypto-tool { margin: 2rem 0; }
 .section { margin: 16px 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #fefefe; }
 .title { font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #222; }
-.label { font-size: 14px; margin: 4px 0; }
+.label { font-size: 14px; margin: 4px 0; white-space: nowrap; }
 textarea, input, select {
     width: 100%; box-sizing: border-box; padding: 8px; margin: 4px 0;
     border: 1px solid #ccc; border-radius: 6px; font-size: 14px;
@@ -39,8 +39,8 @@ textarea { min-height: 100px; resize: vertical; }
 }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
-.row { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
-.col { flex: 1; min-width: 200px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; align-items: center; }
+.col { flex: 1; min-width: 120px; }
 
 .input-error {
     border: 2px solid #ff4444 !important;
@@ -80,24 +80,28 @@ textarea { min-height: 100px; resize: vertical; }
     <div class="section">
         <div class="title">哈希算法（全支持）</div>
 
-        <div class="label">输入模式</div>
-        <select id="hashInputMode">
-            <option value="hex">HEX 模式</option>
-            <option value="utf8">UTF-8 文本模式</option>
-            <option value="base64">Base64 模式</option>
-            <option value="file">二进制文件模式</option>
-        </select>
-
-        <div id="hashInputArea" style="display: block;">
-            <div class="label">输入内容</div>
-            <textarea id="hashInput" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
-            <div class="error-hint" id="hashErrorHint"></div>
-        </div>
-
-        <div id="hashFileArea" style="display: none;">
-            <div class="label">选择二进制文件</div>
-            <input type="file" id="hashFileInput" class="file-input" />
-            <div class="file-hint">支持任意文件，读取原始二进制计算哈希</div>
+        <div class="row">
+            <div class="col" style="max-width:140px;">
+                <div class="label">输入模式</div>
+                <select id="hashInputMode">
+                    <option value="hex">HEX 模式</option>
+                    <option value="utf8">UTF-8 文本模式</option>
+                    <option value="base64">Base64 模式</option>
+                    <option value="file">二进制文件模式</option>
+                </select>
+            </div>
+            <div class="col">
+                <div id="hashInputArea" style="display: block;">
+                    <div class="label">输入内容</div>
+                    <textarea id="hashInput" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+                    <div class="error-hint" id="hashErrorHint"></div>
+                </div>
+                <div id="hashFileArea" style="display: none;">
+                    <div class="label">选择文件</div>
+                    <input type="file" id="hashFileInput" class="file-input" />
+                    <div class="file-hint">读取原始二进制</div>
+                </div>
+            </div>
         </div>
 
         <div class="row" style="margin-top:8px;">
@@ -114,27 +118,39 @@ textarea { min-height: 100px; resize: vertical; }
     <div class="section">
         <div class="title">HMAC 消息认证码</div>
 
-        <div class="label">消息输入模式</div>
-        <select id="hmacInputMode">
-            <option value="hex">HEX 模式</option>
-            <option value="utf8">UTF-8 文本模式</option>
-            <option value="base64">Base64 模式</option>
-        </select>
+        <!-- 消息：模式 + 内容 同一行 -->
+        <div class="row">
+            <div class="col" style="max-width:140px;">
+                <div class="label">消息输入模式</div>
+                <select id="hmacInputMode">
+                    <option value="hex">HEX 模式</option>
+                    <option value="utf8">UTF-8 文本模式</option>
+                    <option value="base64">Base64 模式</option>
+                </select>
+            </div>
+            <div class="col">
+                <div class="label">消息内容</div>
+                <textarea id="hmacMsg" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+                <div class="error-hint" id="hmacErrorHint"></div>
+            </div>
+        </div>
 
-        <div class="label" style="margin-top:8px;">消息内容</div>
-        <textarea id="hmacMsg" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
-        <div class="error-hint" id="hmacErrorHint"></div>
-
-        <div class="label" style="margin-top:8px;">密钥输入模式</div>
-        <select id="hmacKeyMode">
-            <option value="hex">HEX 模式</option>
-            <option value="utf8">UTF-8 文本模式</option>
-            <option value="base64">Base64 模式</option>
-        </select>
-
-        <div class="label" style="margin-top:8px;">密钥</div>
-        <input id="hmacKey" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" />
-        <div class="error-hint" id="hmacKeyErrorHint"></div>
+        <!-- 密钥：模式 + 密钥 同一行 -->
+        <div class="row" style="margin-top:8px;">
+            <div class="col" style="max-width:140px;">
+                <div class="label">密钥输入模式</div>
+                <select id="hmacKeyMode">
+                    <option value="hex">HEX 模式</option>
+                    <option value="utf8">UTF-8 文本模式</option>
+                    <option value="base64">Base64 模式</option>
+                </select>
+            </div>
+            <div class="col">
+                <div class="label">密钥</div>
+                <input id="hmacKey" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" />
+                <div class="error-hint" id="hmacKeyErrorHint"></div>
+            </div>
+        </div>
 
         <div class="label" style="margin-top:8px;">哈希算法</div>
         <select id="hmacAlgo"></select>
