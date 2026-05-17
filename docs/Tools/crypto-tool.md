@@ -230,12 +230,35 @@ textarea { min-height: 100px; resize: vertical; }
     </div>
 </div>
 
-<!-- 编码互转 -->
+<!-- 编码互转 → 已完整升级：输入模式 + 文件输入 -->
 <div id="encode" class="tab-content">
     <div class="section">
-        <div class="title">文本 / HEX / Base64 / Base64Url / UTF-8 互转</div>
-        <div class="label">输入</div>
-        <textarea id="encInput" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        <div class="title">文本 / HEX / Base64 / Base64Url / UTF-8 互转（支持二进制文件）</div>
+
+        <div class="row">
+            <div class="col" style="max-width:140px;">
+                <div class="label">输入模式</div>
+                <select id="encInputMode">
+                    <option value="hex">HEX 模式</option>
+                    <option value="utf8">UTF-8 文本模式</option>
+                    <option value="base64">Base64 模式</option>
+                    <option value="file">二进制文件模式</option>
+                </select>
+            </div>
+            <div class="col">
+                <div id="encInputArea" style="display: block;">
+                    <div class="label">输入内容</div>
+                    <textarea id="encInput" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+                    <div class="error-hint" id="encErrorHint"></div>
+                </div>
+                <div id="encFileArea" style="display: none;">
+                    <div class="label">选择文件</div>
+                    <input type="file" id="encFileInput" class="file-input" />
+                    <div class="file-hint">读取原始二进制</div>
+                </div>
+            </div>
+        </div>
+
         <div class="btn-group">
             <button class="btn" onclick="doEnc('hex')">转 HEX</button>
             <button class="btn" onclick="doEnc('b64')">转 Base64</button>
@@ -285,6 +308,18 @@ function readFileAsUint8Array(file) {
         reader.onerror = reject;
         reader.readAsArrayBuffer(file);
     });
+}
+function bytesToHex(bytes) {
+    return Array.from(bytes).map(x => x.toString(16).padStart(2, '0')).join('');
+}
+function bytesToBase64(bytes) {
+    return btoa(String.fromCharCode(...bytes));
+}
+function bytesToBase64Url(bytes) {
+    return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+function bytesToUtf8(bytes) {
+    return new TextDecoder().decode(bytes);
 }
 
 /* 输入历史上下键记忆 */
@@ -366,6 +401,32 @@ const hmacKeyHistory = {
         return this.index < 0 ? this.current : this.list[this.index];
     }
 };
+const encHistory = {
+    list: [],
+    index: -1,
+    current: "",
+    add(v) {
+        v = v.trim();
+        if (!v || this.list[0] === v) return;
+        this.list = [v, ...this.list.filter(x => x !== v)].slice(0, 30);
+        this.index = -1;
+    },
+    up() {
+        if (this.list.length === 0) return "";
+        if (this.index === -1) {
+            this.current = document.getElementById("encInput").value;
+            this.index = 0;
+        } else {
+            this.index = Math.min(this.index + 1, this.list.length - 1);
+        }
+        return this.list[this.index];
+    },
+    down() {
+        if (this.index <= -1) return "";
+        this.index--;
+        return this.index < 0 ? this.current : this.list[this.index];
+    }
+};
 
 let hw;
 
@@ -396,6 +457,18 @@ function validateHmacKey() {
     const mode = document.getElementById('hmacKeyMode').value;
     const input = document.getElementById('hmacKey');
     const err = document.getElementById('hmacKeyErrorHint');
+    const v = input.value.trim();
+    input.classList.remove('input-error'); err.style.display = 'none';
+    if (mode === 'hex' && !/^[0-9a-fA-F]*$/.test(v)) { input.classList.add('input-error'); err.innerText = '❌ 仅支持 0-9、a-f、A-F'; err.style.display = 'block'; return false; }
+    if (mode === 'base64' && v && !isValidBase64(v)) { input.classList.add('input-error'); err.innerText = '❌ Base64 格式无效'; err.style.display = 'block'; return false; }
+    return true;
+}
+function validateEnc() {
+    const mode = document.getElementById('encInputMode').value;
+    if (mode === 'file') return true;
+
+    const input = document.getElementById('encInput');
+    const err = document.getElementById('encErrorHint');
     const v = input.value.trim();
     input.classList.remove('input-error'); err.style.display = 'none';
     if (mode === 'hex' && !/^[0-9a-fA-F]*$/.test(v)) { input.classList.add('input-error'); err.innerText = '❌ 仅支持 0-9、a-f、A-F'; err.style.display = 'block'; return false; }
@@ -436,9 +509,21 @@ window.onload = async () => {
         document.getElementById('hmacErrorHint').style.display = 'none';
     });
 
+    /* 编码模块文件模式 */
+    const encMode = document.getElementById('encInputMode');
+    const encFileArea = document.getElementById('encFileArea');
+    const encInputArea = document.getElementById('encInputArea');
+    encMode.addEventListener('change', () => {
+        if (encMode.value === 'file') { encInputArea.style.display = 'none'; encFileArea.style.display = 'block'; }
+        else { encInputArea.style.display = 'block'; encFileArea.style.display = 'none'; }
+        document.getElementById('encInput').classList.remove('input-error');
+        document.getElementById('encErrorHint').style.display = 'none';
+    });
+
     document.getElementById('hashInput').addEventListener('input', validateHash);
     document.getElementById('hmacMsg').addEventListener('input', validateHmacMsg);
     document.getElementById('hmacKey').addEventListener('input', validateHmacKey);
+    document.getElementById('encInput').addEventListener('input', validateEnc);
 
     document.getElementById('hashInput').addEventListener('keydown', e => {
         if (document.getElementById('hashInputMode').value === 'file') return;
@@ -454,6 +539,11 @@ window.onload = async () => {
         if (e.key === 'ArrowUp') { e.preventDefault(); document.getElementById('hmacKey').value = hmacKeyHistory.up(); }
         if (e.key === 'ArrowDown') { e.preventDefault(); document.getElementById('hmacKey').value = hmacKeyHistory.down(); }
     });
+    document.getElementById('encInput').addEventListener('keydown', e => {
+        if (document.getElementById('encInputMode').value === 'file') return;
+        if (e.key === 'ArrowUp') { e.preventDefault(); document.getElementById('encInput').value = encHistory.up(); }
+        if (e.key === 'ArrowDown') { e.preventDefault(); document.getElementById('encInput').value = encHistory.down(); }
+    });
 };
 
 /* 标签页切换 */
@@ -465,16 +555,45 @@ function showTab(tabName) {
     document.querySelectorAll('.tab').forEach(t => t.innerText.trim() === tabMap[tabName] && t.classList.add('active'));
 }
 
-/* 编码转换 */
-function doEnc(to) {
-    const i = document.getElementById('encInput').value;
-    const u = new TextEncoder().encode(i);
-    let r = '';
-    if (to === 'hex') r = Array.from(u).map(x => x.toString(16).padStart(2, '0')).join('');
-    if (to === 'b64') r = btoa(String.fromCharCode(...u));
-    if (to === 'b64url') r = btoa(String.fromCharCode(...u)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    if (to === 'utf8') r = new TextDecoder().decode(u);
-    document.getElementById('encResult').innerText = r;
+/* 编码转换（新版：支持4种输入 → 任意输出） */
+async function doEnc(to) {
+    const res = document.getElementById('encResult');
+    res.innerText = "⏳ 转换中...";
+    try {
+        const mode = document.getElementById('encInputMode').value;
+        const val = document.getElementById('encInput').value.trim();
+        let bytes;
+
+        if (!validateEnc()) throw new Error("输入格式错误");
+
+        /* 输入模式 → 统一转为二进制 Uint8Array */
+        if (mode === 'hex') {
+            bytes = val ? hexToBytes(val) : new Uint8Array();
+        } else if (mode === 'utf8') {
+            bytes = new TextEncoder().encode(val);
+        } else if (mode === 'base64') {
+            bytes = val ? base64ToBytes(val) : new Uint8Array();
+        } else if (mode === 'file') {
+            const f = document.getElementById('encFileInput').files[0];
+            if (!f) throw new Error("请选择文件");
+            bytes = await readFileAsUint8Array(f);
+        }
+
+        /* 输出目标格式 */
+        let out;
+        switch (to) {
+            case 'hex': out = bytesToHex(bytes); break;
+            case 'b64': out = bytesToBase64(bytes); break;
+            case 'b64url': out = bytesToBase64Url(bytes); break;
+            case 'utf8': out = bytesToUtf8(bytes); break;
+            default: throw new Error("不支持的输出格式");
+        }
+
+        if (mode !== 'file') encHistory.add(val);
+        res.innerText = out;
+    } catch (e) {
+        res.innerText = "❌ 错误：" + e.message;
+    }
 }
 
 /* 哈希计算 */
@@ -496,7 +615,7 @@ async function doHash() {
     } catch (e) { res.innerText = "❌ 错误：" + e.message; }
 }
 
-/* HMAC 修复版（支持文件输入） */
+/* HMAC */
 async function doHmac() {
     const res = document.getElementById('hmacResult'); 
     res.innerText = "⏳ 计算中...";
@@ -561,15 +680,10 @@ async function doHmac() {
             default: throw new Error("不支持的哈希算法");
         }
 
-        /* 你提供的官方调用格式 */
         const hmac = await hw.createHMAC(hashCreator, key);
         await hmac.update(msg);
         const resultHexStr = await hmac.digest();
-
-        /* 转大写 HEX 输出 */
-        const out = resultHexStr.toUpperCase();
-
-        res.innerText = out;
+        res.innerText = resultHexStr.toUpperCase();
     } catch (e) { 
         console.error("HMAC error:", e);
         res.innerText = "❌ 错误：" + e.message; 
