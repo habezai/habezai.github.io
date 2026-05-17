@@ -252,14 +252,112 @@ function hexToBytes(hex) {
     for (let i = 0; i < hex.length; i += 2) bytes.push(parseInt(hex.substr(i, 2), 16));
     return new Uint8Array(bytes);
 }
-function base64ToBytes(b64) { try { const bin = atob(b64); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); return bytes; } catch (e) { throw new Error('Base64 格式无效'); } }
-function isValidBase64(str) { try { btoa(atob(str)); return true; } catch (e) { return false; } }
-function readFileAsUint8Array(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(new Uint8Array(reader.result)); reader.onerror = reject; reader.readAsArrayBuffer(file); }); }
+function base64ToBytes(b64) {
+    try {
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return bytes;
+    } catch (e) {
+        throw new Error('Base64 格式无效');
+    }
+}
+function isValidBase64(str) {
+    try {
+        btoa(atob(str));
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+function readFileAsUint8Array(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(new Uint8Array(reader.result));
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+    });
+}
 
 /* 输入历史上下键记忆 */
-const inputHistory = { list: [], index: -1, current: "", add(v){ v=v.trim(); if(!v||this.list[0]===v)return; this.list=[v,...this.list.filter(x=>x!==v)].slice(0,30); this.index=-1; }, up(){ if(this.list.length===0)return""; if(this.index===-1){this.current=document.getElementById("hashInput").value;this.index=0;}else this.index=Math.min(this.index+1,this.list.length-1);return this.list[this.index];}, down(){ if(this.index<=-1)return"";this.index--;return this.index<0?this.current:this.list[this.index];} };
-const hmacMsgHistory = { list: [], index: -1, current: "", add(v){ v=v.trim(); if(!v||this.list[0]===v)return; this.list=[v,...this.list.filter(x=>x!==v)].slice(0,30); this.index=-1; }, up(){ if(this.list.length===0)return""; if(this.index===-1){this.current=document.getElementById("hmacMsg").value;this.index=0;}else this.index=Math.min(this.index+1,this.list.length-1);return this.list[this.index];}, down(){ if(this.index<=-1)return"";this.index--;return this.index<0?this.current:this.list[this.index];} };
-const hmacKeyHistory = { list: [], index: -1, current: "", add(v){ v=v.trim(); if(!v||this.list[0]===v)return; this.list=[v,...this.list.filter(x=>x!==v)].slice(0,30); this.index=-1; }, up(){ if(this.list.length===0)return""; if(this.index===-1){this.current=document.getElementById("hmacKey").value;this.index=0;}else this.index=Math.min(this.index+1,this.list.length-1);return this.list[this.index];}, down(){ if(this.index<=-1)return"";this.index--;return this.index<0?this.current:this.list[this.index];} };
+const inputHistory = {
+    list: [],
+    index: -1,
+    current: "",
+    add(v) {
+        v = v.trim();
+        if (!v || this.list[0] === v) return;
+        this.list = [v, ...this.list.filter(x => x !== v)].slice(0, 30);
+        this.index = -1;
+    },
+    up() {
+        if (this.list.length === 0) return "";
+        if (this.index === -1) {
+            this.current = document.getElementById("hashInput").value;
+            this.index = 0;
+        } else {
+            this.index = Math.min(this.index + 1, this.list.length - 1);
+        }
+        return this.list[this.index];
+    },
+    down() {
+        if (this.index <= -1) return "";
+        this.index--;
+        return this.index < 0 ? this.current : this.list[this.index];
+    }
+};
+const hmacMsgHistory = {
+    list: [],
+    index: -1,
+    current: "",
+    add(v) {
+        v = v.trim();
+        if (!v || this.list[0] === v) return;
+        this.list = [v, ...this.list.filter(x => x !== v)].slice(0, 30);
+        this.index = -1;
+    },
+    up() {
+        if (this.list.length === 0) return "";
+        if (this.index === -1) {
+            this.current = document.getElementById("hmacMsg").value;
+            this.index = 0;
+        } else {
+            this.index = Math.min(this.index + 1, this.list.length - 1);
+        }
+        return this.list[this.index];
+    },
+    down() {
+        if (this.index <= -1) return "";
+        this.index--;
+        return this.index < 0 ? this.current : this.list[this.index];
+    }
+};
+const hmacKeyHistory = {
+    list: [],
+    index: -1,
+    current: "",
+    add(v) {
+        v = v.trim();
+        if (!v || this.list[0] === v) return;
+        this.list = [v, ...this.list.filter(x => x !== v)].slice(0, 30);
+        this.index = -1;
+    },
+    up() {
+        if (this.list.length === 0) return "";
+        if (this.index === -1) {
+            this.current = document.getElementById("hmacKey").value;
+            this.index = 0;
+        } else {
+            this.index = Math.min(this.index + 1, this.list.length - 1);
+        }
+        return this.list[this.index];
+    },
+    down() {
+        if (this.index <= -1) return "";
+        this.index--;
+        return this.index < 0 ? this.current : this.list[this.index];
+    }
+};
 
 let hw;
 

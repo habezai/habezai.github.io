@@ -1,0 +1,3 @@
+function base64ToBytes(b64) { try { const bin = atob(b64); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); return bytes; } catch (e) { throw new Error('Base64 格式无效'); } }
+function isValidBase64(str) { try { btoa(atob(str)); return true; } catch (e) { return false; } }
+function readFileAsUint8Array(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(new Uint8Array(reader.result)); reader.onerror = reject; reader.readAsArrayBuffer(file); }); }
