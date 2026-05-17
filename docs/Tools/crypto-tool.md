@@ -21,7 +21,7 @@ textarea { min-height: 100px; resize: vertical; }
 }
 .btn-danger { background: #dc3544; }
 .btn-success { background: #28a745; }
-.btn-group { display: flex; wrap: wrap; gap: 8px; margin: 8px 0; }
+.btn-group { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
 .result {
     background-color: #f6f8fa; padding: 12px; border-radius: 6px;
     font-family: Consolas, monospace; white-space: pre-wrap; word-break: break-all;
@@ -75,7 +75,7 @@ textarea { min-height: 100px; resize: vertical; }
     <div class="tab" onclick="showTab('encode')">编码</div>
 </div>
 
-<!-- ===================== 哈希模块 ===================== -->
+<!-- 哈希模块 -->
 <div id="hash" class="tab-content active">
     <div class="section">
         <div class="title">哈希算法（全支持）</div>
@@ -109,7 +109,7 @@ textarea { min-height: 100px; resize: vertical; }
     </div>
 </div>
 
-<!-- ===================== HMAC 模块 ===================== -->
+<!-- HMAC 模块 -->
 <div id="hmac" class="tab-content">
     <div class="section">
         <div class="title">HMAC 消息认证码</div>
@@ -144,7 +144,7 @@ textarea { min-height: 100px; resize: vertical; }
     </div>
 </div>
 
-<!-- ===================== AES / SM4 模块 ===================== -->
+<!-- AES / SM4 对称加密 -->
 <div id="aes" class="tab-content">
     <div class="section">
         <div class="title">AES / SM4 对称加密（CBC）</div>
@@ -169,7 +169,7 @@ textarea { min-height: 100px; resize: vertical; }
     </div>
 </div>
 
-<!-- ===================== RSA 模块 ===================== -->
+<!-- RSA 非对称加密 -->
 <div id="rsa" class="tab-content">
     <div class="section">
         <div class="title">RSA 加密/解密</div>
@@ -190,7 +190,7 @@ textarea { min-height: 100px; resize: vertical; }
     </div>
 </div>
 
-<!-- ===================== 随机数模块 ===================== -->
+<!-- 安全随机数 -->
 <div id="random" class="tab-content">
     <div class="section">
         <div class="title">安全随机数 / 密钥生成</div>
@@ -206,7 +206,7 @@ textarea { min-height: 100px; resize: vertical; }
     </div>
 </div>
 
-<!-- ===================== 编码模块 ===================== -->
+<!-- 编码互转 -->
 <div id="encode" class="tab-content">
     <div class="section">
         <div class="title">文本 / HEX / Base64 / Base64Url / UTF-8 互转</div>
@@ -228,7 +228,7 @@ textarea { min-height: 100px; resize: vertical; }
 <script src="https://cdn.jsdelivr.net/npm/node-forge@1.3.1/dist/forge.min.js"></script>
 
 <script>
-/* 工具函数 */
+/* 基础工具函数 */
 function hexToBytes(hex) {
     hex = hex.replace(/^0x/, '').replace(/\s/g, '');
     if (hex.length % 2 !== 0) throw new Error('HEX 长度必须为偶数');
@@ -240,14 +240,14 @@ function base64ToBytes(b64) { try { const bin = atob(b64); const bytes = new Uin
 function isValidBase64(str) { try { btoa(atob(str)); return true; } catch (e) { return false; } }
 function readFileAsUint8Array(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(new Uint8Array(reader.result)); reader.onerror = reject; reader.readAsArrayBuffer(file); }); }
 
-/* 历史记录 */
+/* 输入历史上下键记忆 */
 const inputHistory = { list: [], index: -1, current: "", add(v){ v=v.trim(); if(!v||this.list[0]===v)return; this.list=[v,...this.list.filter(x=>x!==v)].slice(0,30); this.index=-1; }, up(){ if(this.list.length===0)return""; if(this.index===-1){this.current=document.getElementById("hashInput").value;this.index=0;}else this.index=Math.min(this.index+1,this.list.length-1);return this.list[this.index];}, down(){ if(this.index<=-1)return"";this.index--;return this.index<0?this.current:this.list[this.index];} };
 const hmacMsgHistory = { list: [], index: -1, current: "", add(v){ v=v.trim(); if(!v||this.list[0]===v)return; this.list=[v,...this.list.filter(x=>x!==v)].slice(0,30); this.index=-1; }, up(){ if(this.list.length===0)return""; if(this.index===-1){this.current=document.getElementById("hmacMsg").value;this.index=0;}else this.index=Math.min(this.index+1,this.list.length-1);return this.list[this.index];}, down(){ if(this.index<=-1)return"";this.index--;return this.index<0?this.current:this.list[this.index];} };
 const hmacKeyHistory = { list: [], index: -1, current: "", add(v){ v=v.trim(); if(!v||this.list[0]===v)return; this.list=[v,...this.list.filter(x=>x!==v)].slice(0,30); this.index=-1; }, up(){ if(this.list.length===0)return""; if(this.index===-1){this.current=document.getElementById("hmacKey").value;this.index=0;}else this.index=Math.min(this.index+1,this.list.length-1);return this.list[this.index];}, down(){ if(this.index<=-1)return"";this.index--;return this.index<0?this.current:this.list[this.index];} };
 
 let hw;
 
-/* 全局校验函数 */
+/* 输入格式校验 */
 function validateHash() {
     const mode = document.getElementById('hashInputMode').value;
     const input = document.getElementById('hashInput');
@@ -279,7 +279,7 @@ function validateHmacKey() {
     return true;
 }
 
-/* 初始化 */
+/* 页面初始化 */
 window.onload = async () => {
     hw = window.hashwasm || hashwasm;
     showTab('hash');
@@ -290,7 +290,6 @@ window.onload = async () => {
     hashAlgos.forEach(a => { const o = document.createElement('option'); o.value = a; o.innerText = a.toUpperCase(); document.getElementById('hashAlgo').appendChild(o); });
     hmacAlgos.forEach(a => { const o = document.createElement('option'); o.value = a; o.innerText = a.toUpperCase(); document.getElementById('hmacAlgo').appendChild(o); });
 
-    /* 哈希模式切换 */
     const hashMode = document.getElementById('hashInputMode');
     const hashFileArea = document.getElementById('hashFileArea');
     const hashInputArea = document.getElementById('hashInputArea');
@@ -301,12 +300,10 @@ window.onload = async () => {
         document.getElementById('hashErrorHint').style.display = 'none';
     });
 
-    /* 绑定事件 */
     document.getElementById('hashInput').addEventListener('input', validateHash);
     document.getElementById('hmacMsg').addEventListener('input', validateHmacMsg);
     document.getElementById('hmacKey').addEventListener('input', validateHmacKey);
 
-    /* 方向键历史 */
     document.getElementById('hashInput').addEventListener('keydown', e => {
         if (document.getElementById('hashInputMode').value === 'file') return;
         if (e.key === 'ArrowUp') { e.preventDefault(); document.getElementById('hashInput').value = inputHistory.up(); }
@@ -322,7 +319,7 @@ window.onload = async () => {
     });
 };
 
-/* 标签切换 */
+/* 标签页切换 */
 function showTab(tabName) {
     const tabMap = { hash:'哈希', hmac:'HMAC', aes:'AES/SM4', rsa:'RSA', random:'随机数', encode:'编码' };
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -331,7 +328,7 @@ function showTab(tabName) {
     document.querySelectorAll('.tab').forEach(t => t.innerText.trim() === tabMap[tabName] && t.classList.add('active'));
 }
 
-/* 编码 */
+/* 编码转换 */
 function doEnc(to) {
     const i = document.getElementById('encInput').value;
     const u = new TextEncoder().encode(i);
@@ -343,7 +340,7 @@ function doEnc(to) {
     document.getElementById('encResult').innerText = r;
 }
 
-/* 哈希 */
+/* 哈希计算 */
 async function doHash() {
     const res = document.getElementById('hashResult'); res.innerText = "⏳ 计算中...";
     try {
@@ -362,9 +359,10 @@ async function doHash() {
     } catch (e) { res.innerText = "❌ 错误：" + e.message; }
 }
 
-/* HMAC */
+/* HMAC 修复版（严格匹配 hash-wasm 官方 API） */
 async function doHmac() {
-    const res = document.getElementById('hmacResult'); res.innerText = "⏳ 计算中...";
+    const res = document.getElementById('hmacResult'); 
+    res.innerText = "⏳ 计算中...";
     try {
         const msgMode = document.getElementById('hmacInputMode').value;
         const keyMode = document.getElementById('hmacKeyMode').value;
@@ -376,29 +374,76 @@ async function doHmac() {
         if (!validateHmacKey()) throw new Error("密钥格式无效");
         if (!keyVal) throw new Error("密钥不能为空");
 
-        let msg = msgMode === 'hex' ? (msgVal ? hexToBytes(msgVal) : new Uint8Array()) :
-                 msgMode === 'utf8' ? new TextEncoder().encode(msgVal) : (msgVal ? base64ToBytes(msgVal) : new Uint8Array());
+        /* 消息转二进制 */
+        let msg;
+        if (msgMode === 'hex') {
+            msg = msgVal ? hexToBytes(msgVal) : new Uint8Array();
+        } else if (msgMode === 'utf8') {
+            msg = new TextEncoder().encode(msgVal);
+        } else {
+            msg = msgVal ? base64ToBytes(msgVal) : new Uint8Array();
+        }
 
-        let key = keyMode === 'hex' ? hexToBytes(keyVal) :
-                  keyMode === 'utf8' ? new TextEncoder().encode(keyVal) : base64ToBytes(keyVal);
+        /* 密钥转二进制 */
+        let key;
+        if (keyMode === 'hex') {
+            key = hexToBytes(keyVal);
+        } else if (keyMode === 'utf8') {
+            key = new TextEncoder().encode(keyVal);
+        } else {
+            key = base64ToBytes(keyVal);
+        }
 
+        /* 历史记录 */
         hmacMsgHistory.add(msgVal);
         hmacKeyHistory.add(keyVal);
 
-        const out = await hw.hmac(key, msg, algo);
-        res.innerText = out.toUpperCase();
-    } catch (e) { res.innerText = "❌ 错误：" + e.message; }
+        /* ============================================== */
+        /* 官方标准调用方式：createHMAC(创建的哈希实例, key) */
+        /* ============================================== */
+        let hashCreator;
+        switch (algo) {
+            case 'md5': hashCreator = hw.createMD5(); break;
+            case 'sha1': hashCreator = hw.createSHA1(); break;
+            case 'sha224': hashCreator = hw.createSHA224(); break;
+            case 'sha256': hashCreator = hw.createSHA256(); break;
+            case 'sha384': hashCreator = hw.createSHA384(); break;
+            case 'sha512': hashCreator = hw.createSHA512(); break;
+            case 'sha3-224': hashCreator = hw.createSHA3_224(); break;
+            case 'sha3-256': hashCreator = hw.createSHA3_256(); break;
+            case 'sha3-384': hashCreator = hw.createSHA3_384(); break;
+            case 'sha3-512': hashCreator = hw.createSHA3_512(); break;
+            case 'md4': hashCreator = hw.createMD4(); break;
+            case 'ripemd160': hashCreator = hw.createRIPEMD160(); break;
+            case 'sm3': hashCreator = hw.createSM3(); break;
+            case 'whirlpool': hashCreator = hw.createWhirlpool(); break;
+            default: throw new Error("不支持的哈希算法");
+        }
+
+        /* 你提供的官方调用格式 */
+        const hmac = await hw.createHMAC(hashCreator, key);
+        await hmac.update(msg);
+        const resultHexStr = await hmac.digest();
+
+        /* 转大写 HEX 输出 */
+        const out = resultHexStr.toUpperCase();
+
+        res.innerText = out;
+    } catch (e) { 
+        console.error("HMAC error:", e);
+        res.innerText = "❌ 错误：" + e.message; 
+    }
 }
 
-/* AES */
+/* AES/SM4 加解密 */
 async function doSymEnc() { try { const a=document.getElementById('symAlgo').value; const p=new TextEncoder().encode(document.getElementById('symPlain').value); const k=hexToBytes(document.getElementById('symKey').value); const i=hexToBytes(document.getElementById('symIv').value); const o=a.startsWith('aes')?await hw.aesCbcEncrypt(p,k,i):await hw.sm4Encrypt(p,k,i); document.getElementById('symResult').innerText=o; }catch(e){document.getElementById('symResult').innerText="❌ 加密失败："+e.message;}}
 async function doSymDec() { try { const a=document.getElementById('symAlgo').value; const c=document.getElementById('symPlain').value; const k=hexToBytes(document.getElementById('symKey').value); const i=hexToBytes(document.getElementById('symIv').value); const o=a.startsWith('aes')?await hw.aesCbcDecrypt(c,k,i):await hw.sm4Decrypt(c,k,i); document.getElementById('symResult').innerText=new TextDecoder().decode(o); }catch(e){document.getElementById('symResult').innerText="❌ 解密失败："+e.message;}}
 
-/* RSA */
+/* RSA 工具 */
 function genRSA(){const k=forge.pki.rsa.generateKeyPair(2048);document.getElementById('rsaPub').value=forge.pki.publicKeyToPem(k.publicKey);document.getElementById('rsaPriv').value=forge.pki.privateKeyToPem(k.privateKey);}
 function doRsaEnc(){try{const p=forge.pki.publicKeyFromPem(document.getElementById('rsaPub').value);const o=p.encrypt(forge.util.encodeUtf8(document.getElementById('rsaPlain').value));document.getElementById('rsaResult').innerText=forge.util.bytesToHex(o);}catch(e){document.getElementById('rsaResult').innerText="❌ 加密失败："+e.message;}}
 function doRsaDec(){try{const p=forge.pki.privateKeyFromPem(document.getElementById('rsaPriv').value);const o=p.decrypt(forge.util.hexToBytes(document.getElementById('rsaPlain').value));document.getElementById('rsaResult').innerText=forge.util.decodeUtf8(o);}catch(e){document.getElementById('rsaResult').innerText="❌ 解密失败："+e.message;}}
 
-/* 随机数 */
+/* 安全随机数生成 */
 function doRand(){try{const l=parseInt(document.getElementById('randLen').value);if(l<1||l>1024)throw new Error("长度 1~1024");const b=crypto.getRandomValues(new Uint8Array(l));const f=document.getElementById('randFormat').value;const o=f==='hex'?Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join(''):btoa(String.fromCharCode(...b));document.getElementById('randResult').innerText=o;}catch(e){document.getElementById('randResult').innerText="❌ 失败："+e.message;}}
 </script>
