@@ -126,12 +126,20 @@ textarea { min-height: 100px; resize: vertical; }
                     <option value="hex">HEX 模式</option>
                     <option value="utf8">UTF-8 文本模式</option>
                     <option value="base64">Base64 模式</option>
+                    <option value="file">二进制文件模式</option>
                 </select>
             </div>
             <div class="col">
-                <div class="label">消息内容</div>
-                <textarea id="hmacMsg" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
-                <div class="error-hint" id="hmacErrorHint"></div>
+                <div id="hmacMsgArea" style="display: block;">
+                    <div class="label">消息内容</div>
+                    <textarea id="hmacMsg" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+                    <div class="error-hint" id="hmacErrorHint"></div>
+                </div>
+                <div id="hmacFileArea" style="display: none;">
+                    <div class="label">选择文件</div>
+                    <input type="file" id="hmacFileInput" class="file-input" />
+                    <div class="file-hint">读取原始二进制</div>
+                </div>
             </div>
         </div>
 
@@ -374,6 +382,8 @@ function validateHash() {
 }
 function validateHmacMsg() {
     const mode = document.getElementById('hmacInputMode').value;
+    if(mode === 'file') return true; /* 文件模式跳过文本校验 */
+    
     const input = document.getElementById('hmacMsg');
     const err = document.getElementById('hmacErrorHint');
     const v = input.value.trim();
@@ -404,6 +414,7 @@ window.onload = async () => {
     hashAlgos.forEach(a => { const o = document.createElement('option'); o.value = a; o.innerText = a.toUpperCase(); document.getElementById('hashAlgo').appendChild(o); });
     hmacAlgos.forEach(a => { const o = document.createElement('option'); o.value = a; o.innerText = a.toUpperCase(); document.getElementById('hmacAlgo').appendChild(o); });
 
+    /* 哈希文件模式切换 */
     const hashMode = document.getElementById('hashInputMode');
     const hashFileArea = document.getElementById('hashFileArea');
     const hashInputArea = document.getElementById('hashInputArea');
@@ -412,6 +423,17 @@ window.onload = async () => {
         else { hashInputArea.style.display = 'block'; hashFileArea.style.display = 'none'; }
         document.getElementById('hashInput').classList.remove('input-error');
         document.getElementById('hashErrorHint').style.display = 'none';
+    });
+
+    /* HMAC 文件模式切换（和哈希完全一致） */
+    const hmacMode = document.getElementById('hmacInputMode');
+    const hmacFileArea = document.getElementById('hmacFileArea');
+    const hmacMsgArea = document.getElementById('hmacMsgArea');
+    hmacMode.addEventListener('change', () => {
+        if (hmacMode.value === 'file') { hmacMsgArea.style.display = 'none'; hmacFileArea.style.display = 'block'; }
+        else { hmacMsgArea.style.display = 'block'; hmacFileArea.style.display = 'none'; }
+        document.getElementById('hmacMsg').classList.remove('input-error');
+        document.getElementById('hmacErrorHint').style.display = 'none';
     });
 
     document.getElementById('hashInput').addEventListener('input', validateHash);
@@ -424,6 +446,7 @@ window.onload = async () => {
         if (e.key === 'ArrowDown') { e.preventDefault(); document.getElementById('hashInput').value = inputHistory.down(); }
     });
     document.getElementById('hmacMsg').addEventListener('keydown', e => {
+        if (document.getElementById('hmacInputMode').value === 'file') return;
         if (e.key === 'ArrowUp') { e.preventDefault(); document.getElementById('hmacMsg').value = hmacMsgHistory.up(); }
         if (e.key === 'ArrowDown') { e.preventDefault(); document.getElementById('hmacMsg').value = hmacMsgHistory.down(); }
     });
@@ -473,7 +496,7 @@ async function doHash() {
     } catch (e) { res.innerText = "❌ 错误：" + e.message; }
 }
 
-/* HMAC 修复版（严格匹配 hash-wasm 官方 API） */
+/* HMAC 修复版（支持文件输入） */
 async function doHmac() {
     const res = document.getElementById('hmacResult'); 
     res.innerText = "⏳ 计算中...";
@@ -488,14 +511,18 @@ async function doHmac() {
         if (!validateHmacKey()) throw new Error("密钥格式无效");
         if (!keyVal) throw new Error("密钥不能为空");
 
-        /* 消息转二进制 */
+        /* 消息转二进制（支持文件） */
         let msg;
         if (msgMode === 'hex') {
             msg = msgVal ? hexToBytes(msgVal) : new Uint8Array();
         } else if (msgMode === 'utf8') {
             msg = new TextEncoder().encode(msgVal);
-        } else {
+        } else if (msgMode === 'base64') {
             msg = msgVal ? base64ToBytes(msgVal) : new Uint8Array();
+        } else if (msgMode === 'file') {
+            const f = document.getElementById('hmacFileInput').files[0];
+            if (!f) throw new Error("请选择文件");
+            msg = await readFileAsUint8Array(f);
         }
 
         /* 密钥转二进制 */
@@ -509,7 +536,7 @@ async function doHmac() {
         }
 
         /* 历史记录 */
-        hmacMsgHistory.add(msgVal);
+        if(msgMode !== 'file') hmacMsgHistory.add(msgVal);
         hmacKeyHistory.add(keyVal);
 
         /* ============================================== */
