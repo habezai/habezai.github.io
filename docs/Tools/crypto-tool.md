@@ -69,7 +69,7 @@ textarea { min-height: 100px; resize: vertical; }
 <div class="tabbar">
     <div class="tab active" onclick="showTab('hash')">哈希</div>
     <div class="tab" onclick="showTab('hmac')">HMAC</div>
-    <div class="tab" onclick="showTab('aes')">AES/SM4</div>
+    <div class="tab" onclick="showTab('aes')">AES-XTS</div>
     <div class="tab" onclick="showTab('rsa')">RSA</div>
     <div class="tab" onclick="showTab('random')">随机数</div>
     <div class="tab" onclick="showTab('encode')">编码</div>
@@ -169,7 +169,7 @@ textarea { min-height: 100px; resize: vertical; }
 <!-- AES 对称加密 -->
 <div id="aes" class="tab-content">
     <div class="section">
-        <div class="title">AES-128-XTS 加密解密（原生纯实现）</div>
+        <div class="title">AES-128-XTS 加密解密</div>
 
         <div class="row">
             <div class="col" style="max-width:180px;">
@@ -405,7 +405,7 @@ async function doHmac() {
 }
 
 /* ------------------------------ */
-/* AES-XTS 原生实现（你提供的正确版） */
+/* AES-XTS 加密解密 */
 /* ------------------------------ */
 function gfMultiply(x) {
     const bytes = new Uint8Array(16);
@@ -477,7 +477,7 @@ class AES_XTS_NATIVE {
 }
 
 /* ------------------------------ */
-/* 原生 AES-128-XTS 加密解密 */
+/* AES-128-XTS 加密解密 */
 /* ------------------------------ */
 function doSymEnc(){
     const r = document.getElementById('symResult');
