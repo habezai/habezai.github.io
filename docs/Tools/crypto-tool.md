@@ -168,23 +168,50 @@ textarea { min-height: 100px; resize: vertical; }
     </div>
 </div>
 
-<!-- AES / SM4 对称加密 -->
+<!-- AES 对称加密 -->
 <div id="aes" class="tab-content">
     <div class="section">
-        <div class="title">AES / SM4 对称加密（CBC）</div>
+        <div class="title">AES 对称加密（CBC 模式）</div>
+
         <div class="row">
-            <div class="col"><select id="symAlgo">
-                <option>aes-128-cbc</option>
-                <option>aes-256-cbc</option>
-                <option>sm4-cbc</option>
-            </select></div>
+            <div class="col" style="max-width:140px;">
+                <div class="label">算法</div>
+                <select id="symAlgo">
+                    <option>aes-128-cbc</option>
+                    <option>aes-256-cbc</option>
+                </select>
+            </div>
+
+            <div class="col" style="max-width:140px;">
+                <div class="label">输入模式</div>
+                <select id="symInputMode">
+                    <option value="utf8">UTF-8 文本模式</option>
+                    <option value="hex">HEX 模式</option>
+                    <option value="base64">Base64 模式</option>
+                    <option value="file">二进制文件模式</option>
+                </select>
+            </div>
         </div>
-        <div class="label">明文</div>
-        <textarea id="symPlain" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+
+        <div id="symInputArea" style="display: block;">
+            <div class="label">输入内容（加密=明文 / 解密=密文）</div>
+            <textarea id="symInput" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+            <div class="error-hint" id="symErrorHint"></div>
+        </div>
+        <div id="symFileArea" style="display: none;">
+            <div class="label">选择文件</div>
+            <input type="file" id="symFileInput" class="file-input" />
+            <div class="file-hint">读取原始二进制数据</div>
+        </div>
+
         <div class="label">密钥 (HEX)</div>
-        <input id="symKey" spellcheck="false" autocorrect="off" autocapitalize="off">
+        <input id="symKey" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="AES128=32位 | AES256=64位">
+        <div class="error-hint" id="symKeyError"></div>
+
         <div class="label">IV (HEX)</div>
-        <input id="symIv" spellcheck="false" autocorrect="off" autocapitalize="off">
+        <input id="symIv" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="必须 32 位 HEX">
+        <div class="error-hint" id="symIvError"></div>
+
         <div class="btn-group">
             <button class="btn btn-success" onclick="doSymEnc()">加密</button>
             <button class="btn btn-danger" onclick="doSymDec()">解密</button>
@@ -273,6 +300,8 @@ textarea { min-height: 100px; resize: vertical; }
 
 <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4.12.0/dist/index.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/node-forge@1.3.1/dist/forge.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/crypto-js-sm4@1.0.0/index.min.js"></script>
 
 <script>
 /* 基础工具函数 */
@@ -544,6 +573,22 @@ window.onload = async () => {
         if (e.key === 'ArrowUp') { e.preventDefault(); document.getElementById('encInput').value = encHistory.up(); }
         if (e.key === 'ArrowDown') { e.preventDefault(); document.getElementById('encInput').value = encHistory.down(); }
     });
+
+    /* 对称加密文件模式切换 */
+    const symMode = document.getElementById('symInputMode');
+    const symFileArea = document.getElementById('symFileArea');
+    const symInputArea = document.getElementById('symInputArea');
+    symMode.addEventListener('change', () => {
+        if (symMode.value === 'file') {
+            symInputArea.style.display = 'none';
+            symFileArea.style.display = 'block';
+        } else {
+            symInputArea.style.display = 'block';
+            symFileArea.style.display = 'none';
+        }
+        document.getElementById('symInput').classList.remove('input-error');
+        document.getElementById('symErrorHint').style.display = 'none';
+    });
 };
 
 /* 标签页切换 */
@@ -690,9 +735,206 @@ async function doHmac() {
     }
 }
 
-/* AES/SM4 加解密 */
-async function doSymEnc() { try { const a=document.getElementById('symAlgo').value; const p=new TextEncoder().encode(document.getElementById('symPlain').value); const k=hexToBytes(document.getElementById('symKey').value); const i=hexToBytes(document.getElementById('symIv').value); const o=a.startsWith('aes')?await hw.aesCbcEncrypt(p,k,i):await hw.sm4Encrypt(p,k,i); document.getElementById('symResult').innerText=o; }catch(e){document.getElementById('symResult').innerText="❌ 加密失败："+e.message;}}
-async function doSymDec() { try { const a=document.getElementById('symAlgo').value; const c=document.getElementById('symPlain').value; const k=hexToBytes(document.getElementById('symKey').value); const i=hexToBytes(document.getElementById('symIv').value); const o=a.startsWith('aes')?await hw.aesCbcDecrypt(c,k,i):await hw.sm4Decrypt(c,k,i); document.getElementById('symResult').innerText=new TextDecoder().decode(o); }catch(e){document.getElementById('symResult').innerText="❌ 解密失败："+e.message;}}
+/*
+ * AES 加密函数
+ * 支持 UTF8 / HEX / Base64 / 文件 输入模式
+ * 输出 Base64 + HEX
+ */
+function doSymEnc() {
+    var res = document.getElementById('symResult');
+    var keyInput = document.getElementById('symKey');
+    var ivInput = document.getElementById('symIv');
+    var inputBox = document.getElementById('symInput');
+    var keyError = document.getElementById('symKeyError');
+    var ivError = document.getElementById('symIvError');
+    var errorHint = document.getElementById('symErrorHint');
+    var mode = document.getElementById('symInputMode').value;
+
+    res.innerText = "⏳ 加密处理中...";
+    keyError.style.display = 'none';
+    ivError.style.display = 'none';
+    errorHint.style.display = 'none';
+    keyInput.classList.remove('input-error');
+    ivInput.classList.remove('input-error');
+    inputBox.classList.remove('input-error');
+
+    try {
+        var algo = document.getElementById('symAlgo').value;
+        var inputVal = document.getElementById('symInput').value.trim();
+        var keyHex = document.getElementById('symKey').value.trim();
+        var ivHex = document.getElementById('symIv').value.trim();
+
+        if (mode !== 'file' && !inputVal) throw new Error("请输入明文内容");
+        if (!keyHex) throw new Error("请输入密钥");
+        if (!ivHex) throw new Error("请输入IV");
+
+        var expectKeyLen = algo === 'aes-128-cbc' ? 32 : 64;
+        if (keyHex.length !== expectKeyLen) {
+            keyInput.classList.add('input-error');
+            keyError.innerText = "❌ 密钥必须为 " + expectKeyLen + " 位 HEX";
+            keyError.style.display = 'block';
+            throw new Error("密钥长度错误");
+        }
+
+        if (ivHex.length !== 32) {
+            ivInput.classList.add('input-error');
+            ivError.innerText = "❌ IV 必须为 32 位 HEX";
+            ivError.style.display = 'block';
+            throw new Error("IV 长度错误");
+        }
+
+        if (mode === 'hex') {
+            if (!/^[0-9a-fA-F]+$/.test(inputVal)) {
+                inputBox.classList.add('input-error');
+                errorHint.innerText = "❌ 仅支持 0-9 a-f A-F";
+                errorHint.style.display = 'block';
+                throw new Error("HEX 格式错误");
+            }
+        }
+
+        if (mode === 'base64') {
+            if (!isValidBase64(inputVal)) {
+                inputBox.classList.add('input-error');
+                errorHint.innerText = "❌ Base64 格式无效";
+                errorHint.style.display = 'block';
+                throw new Error("Base64 格式非法");
+            }
+        }
+
+        var key = CryptoJS.enc.Hex.parse(keyHex);
+        var iv = CryptoJS.enc.Hex.parse(ivHex);
+        var plainWordArray;
+
+        if (mode === 'utf8') {
+            plainWordArray = CryptoJS.enc.Utf8.parse(inputVal);
+        } else if (mode === 'hex') {
+            plainWordArray = CryptoJS.enc.Hex.parse(inputVal);
+        } else if (mode === 'base64') {
+            plainWordArray = CryptoJS.enc.Base64.parse(inputVal);
+        } else if (mode === 'file') {
+            throw new Error("文件模式仅支持解密");
+        }
+
+        var encrypted = CryptoJS.AES.encrypt(plainWordArray, key, {
+            iv: iv,
+            mode: CryptoJS.mode.CBC,
+            padding: CryptoJS.pad.Pkcs7
+        });
+
+        var b64 = encrypted.toString();
+        var hex = encrypted.ciphertext.toString().toUpperCase();
+        res.innerText = "✅ 加密完成\nBase64: " + b64 + "\nHEX:    " + hex;
+
+    } catch (e) {
+        res.innerText = "❌ 加密失败：" + e.message;
+    }
+}
+
+/*
+ * AES 解密函数
+ * 支持 UTF8 / HEX / Base64 / 文件 输入模式
+ */
+async function doSymDec() {
+    var res = document.getElementById('symResult');
+    var keyInput = document.getElementById('symKey');
+    var ivInput = document.getElementById('symIv');
+    var inputBox = document.getElementById('symInput');
+    var keyError = document.getElementById('symKeyError');
+    var ivError = document.getElementById('symIvError');
+    var errorHint = document.getElementById('symErrorHint');
+    var mode = document.getElementById('symInputMode').value;
+
+    res.innerText = "⏳ 解密处理中...";
+    keyError.style.display = 'none';
+    ivError.style.display = 'none';
+    errorHint.style.display = 'none';
+    keyInput.classList.remove('input-error');
+    ivInput.classList.remove('input-error');
+    inputBox.classList.remove('input-error');
+
+    try {
+        var algo = document.getElementById('symAlgo').value;
+        var inputVal = document.getElementById('symInput').value.trim();
+        var keyHex = document.getElementById('symKey').value.trim();
+        var ivHex = document.getElementById('symIv').value.trim();
+
+        if (mode !== 'file' && !inputVal) throw new Error("请输入密文内容");
+        if (!keyHex) throw new Error("请输入密钥");
+        if (!ivHex) throw new Error("请输入IV");
+
+        var expectKeyLen = algo === 'aes-128-cbc' ? 32 : 64;
+        if (keyHex.length !== expectKeyLen) {
+            keyInput.classList.add('input-error');
+            keyError.innerText = "❌ 密钥必须为 " + expectKeyLen + " 位 HEX";
+            keyError.style.display = 'block';
+            throw new Error("密钥长度错误");
+        }
+
+        if (ivHex.length !== 32) {
+            ivInput.classList.add('input-error');
+            ivError.innerText = "❌ IV 必须为 32 位 HEX";
+            ivError.style.display = 'block';
+            throw new Error("IV 长度错误");
+        }
+
+        var cipherBytes;
+
+        if (mode === 'file') {
+            var file = document.getElementById('symFileInput').files[0];
+            if (!file) throw new Error("请选择文件");
+            var buf = await readFileAsUint8Array(file);
+            cipherBytes = CryptoJS.lib.WordArray.create(buf, buf.length);
+        } else {
+            if (mode === 'hex') {
+                if (!/^[0-9a-fA-F]+$/.test(inputVal)) {
+                    inputBox.classList.add('input-error');
+                    errorHint.innerText = "❌ 仅支持 0-9 a-f A-F";
+                    errorHint.style.display = 'block';
+                    throw new Error("HEX 格式错误");
+                }
+            }
+
+            if (mode === 'base64') {
+                if (!isValidBase64(inputVal)) {
+                    inputBox.classList.add('input-error');
+                    errorHint.innerText = "❌ Base64 格式无效";
+                    errorHint.style.display = 'block';
+                    throw new Error("Base64 格式非法");
+                }
+            }
+
+            if (mode === 'base64') {
+                cipherBytes = CryptoJS.enc.Base64.parse(inputVal);
+            } else if (mode === 'hex') {
+                cipherBytes = CryptoJS.enc.Hex.parse(inputVal);
+            } else if (mode === 'utf8') {
+                cipherBytes = CryptoJS.enc.Utf8.parse(inputVal);
+            }
+        }
+
+        var key = CryptoJS.enc.Hex.parse(keyHex);
+        var iv = CryptoJS.enc.Hex.parse(ivHex);
+
+        var cipherParams = CryptoJS.lib.CipherParams.create({
+            ciphertext: cipherBytes
+        });
+
+        var decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
+            iv: iv,
+            mode: CryptoJS.mode.CBC,
+            padding: CryptoJS.pad.Pkcs7
+        });
+
+        var strUtf8 = decrypted.toString(CryptoJS.enc.Utf8);
+        var strHex = decrypted.toString(CryptoJS.enc.Hex).toUpperCase();
+        var strBase64 = decrypted.toString(CryptoJS.enc.Base64);
+
+        res.innerText = "✅ 解密完成\nUTF8: " + strUtf8 + "\nHEX:  " + strHex + "\nB64:  " + strBase64;
+
+    } catch (e) {
+        res.innerText = "❌ 解密失败：" + e.message;
+    }
+}
 
 /* RSA 工具 */
 function genRSA(){const k=forge.pki.rsa.generateKeyPair(2048);document.getElementById('rsaPub').value=forge.pki.publicKeyToPem(k.publicKey);document.getElementById('rsaPriv').value=forge.pki.privateKeyToPem(k.privateKey);}
