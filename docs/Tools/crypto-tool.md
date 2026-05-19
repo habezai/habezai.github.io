@@ -118,6 +118,7 @@ textarea { min-height: 100px; resize: vertical; }
     <div class="section">
         <div class="title">HMAC 消息认证码</div>
 
+        <!-- 消息：模式 + 内容 同一行 -->
         <div class="row">
             <div class="col" style="max-width:140px;">
                 <div class="label">消息输入模式</div>
@@ -142,6 +143,7 @@ textarea { min-height: 100px; resize: vertical; }
             </div>
         </div>
 
+        <!-- 密钥：模式 + 密钥 同一行 -->
         <div class="row" style="margin-top:8px;">
             <div class="col" style="max-width:140px;">
                 <div class="label">密钥输入模式</div>
@@ -383,7 +385,7 @@ async function doHash() {
 
 /* HMAC */
 async function doHmac() {
-    const res = document.getElementById('hmacResult');
+    const res = document.getElementById('hmacResult'); 
     res.innerText = "⏳ 计算中...";
     try {
         const msgMode = document.getElementById('hmacInputMode').value;
@@ -391,17 +393,74 @@ async function doHmac() {
         const algo = document.getElementById('hmacAlgo').value;
         const msgVal = document.getElementById('hmacMsg').value.trim();
         const keyVal = document.getElementById('hmacKey').value.trim();
-        let msg, key;
-        if (msgMode === 'hex') msg = hexToBytes(msgVal);
-        else if (msgMode === 'utf8') msg = new TextEncoder().encode(msgVal);
-        else msg = base64ToBytes(msgVal);
-        if (keyMode === 'hex') key = hexToBytes(keyVal);
-        else if (keyMode === 'utf8') key = new TextEncoder().encode(keyVal);
-        else key = base64ToBytes(keyVal);
-        let h = hw['create'+algo.replace('-','_').toUpperCase()]();
-        let out = await hw.createHMAC(h, key).update(msg).digest();
-        res.innerText = out.toUpperCase();
-    } catch (e) { res.innerText = "❌ 错误："+e.message; }
+
+        if (!validateHmacMsg()) throw new Error("消息格式无效");
+        if (!validateHmacKey()) throw new Error("密钥格式无效");
+        if (!keyVal) throw new Error("密钥不能为空");
+
+        /* 消息转二进制（支持文件） */
+        let msg;
+        if (msgMode === 'hex') {
+            msg = msgVal ? hexToBytes(msgVal) : new Uint8Array();
+        } else if (msgMode === 'utf8') {
+            msg = new TextEncoder().encode(msgVal);
+        } else if (msgMode === 'base64') {
+            msg = msgVal ? base64ToBytes(msgVal) : new Uint8Array();
+        } else if (msgMode === 'file') {
+            const f = document.getElementById('hmacFileInput').files[0];
+            if (!f) throw new Error("请选择文件");
+            msg = await readFileAsUint8Array(f);
+        }
+
+        /* 密钥转二进制 */
+        let key;
+        if (keyMode === 'hex') {
+            key = hexToBytes(keyVal);
+        } else if (keyMode === 'utf8') {
+            key = new TextEncoder().encode(keyVal);
+        } else {
+            key = base64ToBytes(keyVal);
+        }
+
+        /* 历史记录 */
+        if(msgMode !== 'file') hmacMsgHistory.add(msgVal);
+        hmacKeyHistory.add(keyVal);
+
+        /* ============================================== */
+        /* 官方标准调用方式：createHMAC(创建的哈希实例, key) */
+        /* ============================================== */
+        let hashCreator;
+        switch (algo) {
+            case 'md5': hashCreator = hw.createMD5(); break;
+            case 'sha1': hashCreator = hw.createSHA1(); break;
+            case 'sha224': hashCreator = hw.createSHA224(); break;
+            case 'sha256': hashCreator = hw.createSHA256(); break;
+            case 'sha384': hashCreator = hw.createSHA384(); break;
+            case 'sha512': hashCreator = hw.createSHA512(); break;
+            case 'sha3-224': hashCreator = hw.createSHA3_224(); break;
+            case 'sha3-256': hashCreator = hw.createSHA3_256(); break;
+            case 'sha3-384': hashCreator = hw.createSHA3_384(); break;
+            case 'sha3-512': hashCreator = hw.createSHA3_512(); break;
+            case 'md4': hashCreator = hw.createMD4(); break;
+            case 'ripemd160': hashCreator = hw.createRIPEMD160(); break;
+            case 'sm3': hashCreator = hw.createSM3(); break;
+            case 'whirlpool': hashCreator = hw.createWhirlpool(); break;
+            default: throw new Error("不支持的哈希算法");
+        }
+
+        /* 你提供的官方调用格式 */
+        const hmac = await hw.createHMAC(hashCreator, key);
+        await hmac.update(msg);
+        const resultHexStr = await hmac.digest();
+
+        /* 转大写 HEX 输出 */
+        const out = resultHexStr.toUpperCase();
+
+        res.innerText = out;
+    } catch (e) { 
+        console.error("HMAC error:", e);
+        res.innerText = "❌ 错误：" + e.message; 
+    }
 }
 
 /* ------------------------------ */
