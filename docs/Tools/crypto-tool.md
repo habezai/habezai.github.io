@@ -307,7 +307,12 @@ function base64ToBytes(b64) {
     }
 }
 function isValidBase64(str) {
-    try { btoa(atob(str)); return true; } catch (e) { return false; }
+    try {
+        btoa(atob(str));
+        return true;
+    } catch (e) {
+        return false;
+    }
 }
 function bytesToHex(bytes) {
     return Array.from(bytes).map(x => x.toString(16).padStart(2, '0')).join('');
@@ -319,7 +324,129 @@ function bytesToUtf8(bytes) {
     return new TextDecoder().decode(bytes);
 }
 
-let hw;
+function readFileAsUint8Array(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(new Uint8Array(reader.result));
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+/* 输入历史上下键记忆 */
+const inputHistory = {
+    list: [],
+    index: -1,
+    current: "",
+    add(v) {
+        v = v.trim();
+        if (!v || this.list[0] === v) return;
+        this.list = [v, ...this.list.filter(x => x !== v)].slice(0, 30);
+        this.index = -1;
+    },
+    up() {
+        if (this.list.length === 0) return "";
+        if (this.index === -1) {
+            this.current = document.getElementById("hashInput").value;
+            this.index = 0;
+        } else {
+            this.index = Math.min(this.index + 1, this.list.length - 1);
+        }
+        return this.list[this.index];
+    },
+    down() {
+        if (this.index <= -1) return "";
+        this.index--;
+        return this.index < 0 ? this.current : this.list[this.index];
+    }
+};
+const hmacMsgHistory = {
+    list: [],
+    index: -1,
+    current: "",
+    add(v) {
+        v = v.trim();
+        if (!v || this.list[0] === v) return;
+        this.list = [v, ...this.list.filter(x => x !== v)].slice(0, 30);
+        this.index = -1;
+    },
+    up() {
+        if (this.list.length === 0) return "";
+        if (this.index === -1) {
+            this.current = document.getElementById("hmacMsg").value;
+            this.index = 0;
+        } else {
+            this.index = Math.min(this.index + 1, this.list.length - 1);
+        }
+        return this.list[this.index];
+    },
+    down() {
+        if (this.index <= -1) return "";
+        this.index--;
+        return this.index < 0 ? this.current : this.list[this.index];
+    }
+};
+const hmacKeyHistory = {
+    list: [],
+    index: -1,
+    current: "",
+    add(v) {
+        v = v.trim();
+        if (!v || this.list[0] === v) return;
+        this.list = [v, ...this.list.filter(x => x !== v)].slice(0, 30);
+        this.index = -1;
+    },
+    up() {
+        if (this.list.length === 0) return "";
+        if (this.index === -1) {
+            this.current = document.getElementById("hmacKey").value;
+            this.index = 0;
+        } else {
+            this.index = Math.min(this.index + 1, this.list.length - 1);
+        }
+        return this.list[this.index];
+    },
+    down() {
+        if (this.index <= -1) return "";
+        this.index--;
+        return this.index < 0 ? this.current : this.list[this.index];
+    }
+};
+
+
+/* 输入格式校验 */
+function validateHash() {
+    const mode = document.getElementById('hashInputMode').value;
+    const input = document.getElementById('hashInput');
+    const err = document.getElementById('hashErrorHint');
+    const v = input.value.trim();
+    input.classList.remove('input-error'); err.style.display = 'none';
+    if (mode === 'hex' && !/^[0-9a-fA-F]*$/.test(v)) { input.classList.add('input-error'); err.innerText = '❌ 仅支持 0-9、a-f、A-F'; err.style.display = 'block'; return false; }
+    if (mode === 'base64' && v && !isValidBase64(v)) { input.classList.add('input-error'); err.innerText = '❌ Base64 格式无效'; err.style.display = 'block'; return false; }
+    return true;
+}
+function validateHmacMsg() {
+    const mode = document.getElementById('hmacInputMode').value;
+    if(mode === 'file') return true; /* 文件模式跳过文本校验 */
+    
+    const input = document.getElementById('hmacMsg');
+    const err = document.getElementById('hmacErrorHint');
+    const v = input.value.trim();
+    input.classList.remove('input-error'); err.style.display = 'none';
+    if (mode === 'hex' && !/^[0-9a-fA-F]*$/.test(v)) { input.classList.add('input-error'); err.innerText = '❌ 仅支持 0-9、a-f、A-F'; err.style.display = 'block'; return false; }
+    if (mode === 'base64' && v && !isValidBase64(v)) { input.classList.add('input-error'); err.innerText = '❌ Base64 格式无效'; err.style.display = 'block'; return false; }
+    return true;
+}
+function validateHmacKey() {
+    const mode = document.getElementById('hmacKeyMode').value;
+    const input = document.getElementById('hmacKey');
+    const err = document.getElementById('hmacKeyErrorHint');
+    const v = input.value.trim();
+    input.classList.remove('input-error'); err.style.display = 'none';
+    if (mode === 'hex' && !/^[0-9a-fA-F]*$/.test(v)) { input.classList.add('input-error'); err.innerText = '❌ 仅支持 0-9、a-f、A-F'; err.style.display = 'block'; return false; }
+    if (mode === 'base64' && v && !isValidBase64(v)) { input.classList.add('input-error'); err.innerText = '❌ Base64 格式无效'; err.style.display = 'block'; return false; }
+    return true;
+}
 
 /* 页面初始化 */
 window.onload = async () => {
