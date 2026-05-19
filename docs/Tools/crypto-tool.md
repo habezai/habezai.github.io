@@ -182,23 +182,23 @@ textarea { min-height: 100px; resize: vertical; }
             <div class="col" style="max-width:160px;">
                 <div class="label">输入模式</div>
                 <select id="symInputMode">
+                    <option value="hex">HEX 模式</option> <!-- 默认改为 HEX -->
                     <option value="utf8">UTF-8 文本模式</option>
-                    <option value="hex">HEX 模式</option>
                     <option value="base64">Base64 模式</option>
                 </select>
             </div>
         </div>
 
-        <div class="label">输入内容（加密=明文 / 解密=密文）</div>
-        <textarea id="symInput" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        <div class="label">明文 (HEX)</div>
+        <textarea id="symInput" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">1dd27696c9c501945533f8990c245f74b0c13faf25b349a627d808f46ac77efe</textarea>
         <div class="error-hint" id="symErrorHint"></div>
 
         <div class="label">密钥 (HEX) → 必须 64 位</div>
-        <input id="symKey" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="64 位 HEX（32 字节）">
+        <input id="symKey" spellcheck="false" autocorrect="off" autocapitalize="off" value="b4ea849b02a0cd5b6d32c5c0cbd059a2bfd517ca8f09cbdb90f23b4537e0dc9c">
         <div class="error-hint" id="symKeyError"></div>
 
         <div class="label">Tweak (HEX) → 必须 32 位</div>
-        <input id="symIv" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="32 位 HEX（16 字节）">
+        <input id="symIv" spellcheck="false" autocorrect="off" autocapitalize="off" value="4cbc59b0824f5f6913f50d1155860818">
         <div class="error-hint" id="symIvError"></div>
 
         <div class="btn-group">
