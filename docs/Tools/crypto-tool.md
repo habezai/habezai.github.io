@@ -191,7 +191,7 @@ textarea { min-height: 100px; resize: vertical; }
             </div>
         </div>
 
-        <div class="label">明文 (HEX)</div>
+        <div class="label">输入数据 (HEX)</div>
         <textarea id="symInput" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">1dd27696c9c501945533f8990c245f74b0c13faf25b349a627d808f46ac77efe</textarea>
         <div class="error-hint" id="symErrorHint"></div>
 
