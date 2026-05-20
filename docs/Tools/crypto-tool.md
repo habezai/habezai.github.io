@@ -198,7 +198,7 @@ textarea { min-height: 100px; resize: vertical; }
             <textarea id="symInput" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">1dd27696c9c501945533f8990c245f74b0c13faf25b349a627d808f46ac77efe</textarea>
             <div class="error-hint" id="symErrorHint"></div>
         </div>
-        <div id="symFileArea" style="display: none;"> <!-- 新增文件区域 -->
+        <div id="symFileArea" style="display: none;"> <!-- 文件区域 -->
             <div class="label">选择二进制文件</div>
             <input type="file" id="symFileInput" class="file-input" />
             <div class="file-hint">读取原始二进制数据</div>
@@ -293,6 +293,7 @@ textarea { min-height: 100px; resize: vertical; }
             <button class="btn" onclick="doEnc('b64')">转 Base64</button>
             <button class="btn" onclick="doEnc('b64url')">转 Base64Url</button>
             <button class="btn" onclick="doEnc('utf8')">转 UTF-8</button>
+            <button class="btn btn-success" onclick="downloadEncBin()">下载转换结果Bin文件</button>
         </div>
         <div class="result" id="encResult"></div>
     </div>
@@ -584,7 +585,7 @@ window.onload = async () => {
         document.getElementById('symErrorHint').style.display = 'none';
     });
 
-    /* 新增AES输入校验监听 */
+    /* AES输入校验监听 */
     document.getElementById('symInput').addEventListener('input', validateSym);
 
     document.getElementById('hashInput').addEventListener('keydown', e => {
@@ -650,6 +651,8 @@ async function doEnc(to) {
             case 'utf8': out = bytesToUtf8(bytes); break;
             default: throw new Error("不支持的输出格式");
         }
+
+        encodeBinaryResult = bytes; /* 存储编码转换的原始二进制结果 */
 
         if (mode !== 'file') encHistory.add(val);
         res.innerText = out;
@@ -827,6 +830,9 @@ class AES_XTS_NATIVE {
 /* 存储AES-XTS加密/解密的二进制结果（用于下载Bin文件） */
 let symBinaryResult = null;
 
+/* 存储编码转换的二进制结果（用于下载Bin文件） */
+let encodeBinaryResult = null;
+
 /* ------------------------------ */
 /* AES-128-XTS 加密解密 */
 /* ------------------------------ */
@@ -842,7 +848,7 @@ async function doSymEnc(){
         if(mode==='hex') data=hexToBytes(val);
         else if(mode==='utf8') data=new TextEncoder().encode(val);
         else if(mode==='base64') data=base64ToBytes(val);
-        else if(mode==='file') { /* 新增：文件输入模式 */
+        else if(mode==='file') { /* 文件输入模式 */
             const f = document.getElementById('symFileInput').files[0];
             if (!f) throw new Error("请选择二进制文件");
             data = await readFileAsUint8Array(f);
@@ -866,7 +872,7 @@ async function doSymDec(){
         let data;
         if(mode==='hex') data=hexToBytes(val);
         else if(mode==='base64') data=base64ToBytes(val);
-        else if(mode==='file') { /* 新增：文件输入模式 */
+        else if(mode==='file') { /* 文件输入模式 */
             const f = document.getElementById('symFileInput').files[0];
             if (!f) throw new Error("请选择二进制文件");
             data = await readFileAsUint8Array(f);
@@ -880,7 +886,7 @@ async function doSymDec(){
     }catch(e){ r.innerText="❌ 失败："+e.message; }
 }
 
-/* 新增：下载AES-XTS二进制Bin文件 */
+/* 下载AES-XTS二进制Bin文件 */
 function downloadSymBin(filename) {
     if (!symBinaryResult) {
         document.getElementById('symResult').innerText = "❌ 请先执行加密/解密";
@@ -891,6 +897,21 @@ function downloadSymBin(filename) {
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+/* 下载编码转换结果的二进制Bin文件 */
+function downloadEncBin() {
+    if (!encodeBinaryResult) {
+        document.getElementById('encResult').innerText = "❌ 请先执行编码转换";
+        return;
+    }
+    const blob = new Blob([encodeBinaryResult], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "encode_result.bin"; /* 默认文件名 */
     a.click();
     URL.revokeObjectURL(url);
 }
