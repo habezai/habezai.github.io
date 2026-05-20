@@ -206,6 +206,7 @@ textarea { min-height: 100px; resize: vertical; }
         <div class="btn-group">
             <button class="btn btn-success" onclick="doSymEnc()">加密</button>
             <button class="btn btn-danger" onclick="doSymDec()">解密</button>
+            <button class="btn" onclick="downloadSymBin('symResult.bin')">下载输出结果Bin</button>
         </div>
         <div class="result" id="symResult"></div>
     </div>
@@ -782,6 +783,9 @@ class AES_XTS_NATIVE {
     }
 }
 
+/* 存储AES-XTS加密/解密的二进制结果（用于下载Bin文件） */
+let symBinaryResult = null;
+
 /* ------------------------------ */
 /* AES-128-XTS 加密解密 */
 /* ------------------------------ */
@@ -800,6 +804,7 @@ function doSymEnc(){
 
         const xts = new AES_XTS_NATIVE(key);
         const out = xts.encrypt(data, tweak);
+        symBinaryResult = out;
         r.innerText=`✅ 完成\nHEX: ${bytesToHex(out)}\nBase64: ${bytesToBase64(out)}`;
     }catch(e){ r.innerText="❌ 失败："+e.message; }
 }
@@ -819,10 +824,25 @@ function doSymDec(){
 
         const xts = new AES_XTS_NATIVE(key);
         const out = xts.decrypt(data, tweak);
-        r.innerText=`✅ 完成\nUTF8: ${bytesToUtf8(out)}\nHEX: ${bytesToHex(out)}`;
+        symBinaryResult = out; /*存储解密二进制结果*/
+        r.innerText=`✅ 完成\nHEX: ${bytesToHex(out)}\nBase64: ${bytesToBase64(out)}`;
     }catch(e){ r.innerText="❌ 失败："+e.message; }
 }
 
+/* 新增：下载AES-XTS二进制Bin文件 */
+function downloadSymBin(filename) {
+    if (!symBinaryResult) {
+        document.getElementById('symResult').innerText = "❌ 请先执行加密/解密";
+        return;
+    }
+    const blob = new Blob([symBinaryResult], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
 
 /* RSA 工具 */
 function genRSA(){const k=forge.pki.rsa.generateKeyPair(2048);document.getElementById('rsaPub').value=forge.pki.publicKeyToPem(k.publicKey);document.getElementById('rsaPriv').value=forge.pki.privateKeyToPem(k.privateKey);}
