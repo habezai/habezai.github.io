@@ -3,7 +3,7 @@ title: (实用工具)密码学工具箱
 parent: Tools
 ---
 
-# 密码工具箱（离线运行）
+# 密码工具箱
 
 <style>
 .crypto-tool { margin: 2rem 0; }
@@ -78,7 +78,7 @@ textarea { min-height: 100px; resize: vertical; }
 <!-- 哈希模块 -->
 <div id="hash" class="tab-content active">
     <div class="section">
-        <div class="title">哈希算法（全支持）</div>
+        <div class="title">哈希算法</div>
 
         <div class="row">
             <div class="col" style="max-width:140px;">
@@ -545,7 +545,7 @@ window.onload = async () => {
         document.getElementById('hashErrorHint').style.display = 'none';
     });
 
-    /* HMAC 文件模式切换（和哈希完全一致） */
+    /* HMAC 文件模式切换 */
     const hmacMode = document.getElementById('hmacInputMode');
     const hmacFileArea = document.getElementById('hmacFileArea');
     const hmacMsgArea = document.getElementById('hmacMsgArea');
