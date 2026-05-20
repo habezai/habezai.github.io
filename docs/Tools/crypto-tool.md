@@ -187,13 +187,22 @@ textarea { min-height: 100px; resize: vertical; }
                     <option value="hex">HEX 模式</option> <!-- 默认改为 HEX -->
                     <option value="utf8">UTF-8 文本模式</option>
                     <option value="base64">Base64 模式</option>
+                    <option value="file">二进制文件模式</option>
                 </select>
             </div>
         </div>
 
-        <div class="label">输入数据 (HEX)</div>
-        <textarea id="symInput" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">1dd27696c9c501945533f8990c245f74b0c13faf25b349a627d808f46ac77efe</textarea>
-        <div class="error-hint" id="symErrorHint"></div>
+        <!-- 输入区域：文本/文件切换 -->
+        <div id="symInputArea" style="display: block;">
+            <div class="label">输入数据 (HEX/文本/Base64)</div>
+            <textarea id="symInput" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">1dd27696c9c501945533f8990c245f74b0c13faf25b349a627d808f46ac77efe</textarea>
+            <div class="error-hint" id="symErrorHint"></div>
+        </div>
+        <div id="symFileArea" style="display: none;"> <!-- 新增文件区域 -->
+            <div class="label">选择二进制文件</div>
+            <input type="file" id="symFileInput" class="file-input" />
+            <div class="file-hint">读取原始二进制数据</div>
+        </div>
 
         <div class="label">密钥 (HEX) → 必须 64 位</div>
         <input id="symKey" spellcheck="false" autocorrect="off" autocapitalize="off" value="b4ea849b02a0cd5b6d32c5c0cbd059a2bfd517ca8f09cbdb90f23b4537e0dc9c">
@@ -497,6 +506,22 @@ function validateEnc() {
     return true;
 }
 
+/* ====================== */
+/* AES-XTS 输入格式校验 */
+/* ====================== */
+function validateSym() {
+    const mode = document.getElementById('symInputMode').value;
+    if(mode === 'file') return true; /* 文件模式跳过文本校验 */
+    
+    const input = document.getElementById('symInput');
+    const err = document.getElementById('symErrorHint');
+    const v = input.value.trim();
+    input.classList.remove('input-error'); err.style.display = 'none';
+    if (mode === 'hex' && !/^[0-9a-fA-F]*$/.test(v)) { input.classList.add('input-error'); err.innerText = '❌ 仅支持 0-9、a-f、A-F'; err.style.display = 'block'; return false; }
+    if (mode === 'base64' && v && !isValidBase64(v)) { input.classList.add('input-error'); err.innerText = '❌ Base64 格式无效'; err.style.display = 'none'; return false; }
+    return true;
+}
+
 /* 页面初始化 */
 window.onload = async () => {
     hw = window.hashwasm || hashwasm;
@@ -545,6 +570,22 @@ window.onload = async () => {
     document.getElementById('hmacMsg').addEventListener('input', validateHmacMsg);
     document.getElementById('hmacKey').addEventListener('input', validateHmacKey);
     document.getElementById('encInput').addEventListener('input', validateEnc);
+
+    /* ====================== */
+    /* AES-XTS 文件模式切换 */
+    /* ====================== */
+    const symMode = document.getElementById('symInputMode');
+    const symFileArea = document.getElementById('symFileArea');
+    const symInputArea = document.getElementById('symInputArea');
+    symMode.addEventListener('change', () => {
+        if (symMode.value === 'file') { symInputArea.style.display = 'none'; symFileArea.style.display = 'block'; }
+        else { symInputArea.style.display = 'block'; symFileArea.style.display = 'none'; }
+        document.getElementById('symInput').classList.remove('input-error');
+        document.getElementById('symErrorHint').style.display = 'none';
+    });
+
+    /* 新增AES输入校验监听 */
+    document.getElementById('symInput').addEventListener('input', validateSym);
 
     document.getElementById('hashInput').addEventListener('keydown', e => {
         if (document.getElementById('hashInputMode').value === 'file') return;
@@ -789,7 +830,7 @@ let symBinaryResult = null;
 /* ------------------------------ */
 /* AES-128-XTS 加密解密 */
 /* ------------------------------ */
-function doSymEnc(){
+async function doSymEnc(){
     const r = document.getElementById('symResult');
     const mode = document.getElementById('symInputMode').value;
     const key = document.getElementById('symKey').value.trim();
@@ -800,7 +841,12 @@ function doSymEnc(){
         let data;
         if(mode==='hex') data=hexToBytes(val);
         else if(mode==='utf8') data=new TextEncoder().encode(val);
-        else data=base64ToBytes(val);
+        else if(mode==='base64') data=base64ToBytes(val);
+        else if(mode==='file') { /* 新增：文件输入模式 */
+            const f = document.getElementById('symFileInput').files[0];
+            if (!f) throw new Error("请选择二进制文件");
+            data = await readFileAsUint8Array(f);
+        }
 
         const xts = new AES_XTS_NATIVE(key);
         const out = xts.encrypt(data, tweak);
@@ -809,7 +855,7 @@ function doSymEnc(){
     }catch(e){ r.innerText="❌ 失败："+e.message; }
 }
 
-function doSymDec(){
+async function doSymDec(){
     const r = document.getElementById('symResult');
     const mode = document.getElementById('symInputMode').value;
     const key = document.getElementById('symKey').value.trim();
@@ -820,7 +866,12 @@ function doSymDec(){
         let data;
         if(mode==='hex') data=hexToBytes(val);
         else if(mode==='base64') data=base64ToBytes(val);
-        else throw new Error("密文请使用 HEX 或 Base64 输入");
+        else if(mode==='file') { /* 新增：文件输入模式 */
+            const f = document.getElementById('symFileInput').files[0];
+            if (!f) throw new Error("请选择二进制文件");
+            data = await readFileAsUint8Array(f);
+        }
+        else throw new Error("密文请使用 HEX / Base64 / 文件输入");
 
         const xts = new AES_XTS_NATIVE(key);
         const out = xts.decrypt(data, tweak);
