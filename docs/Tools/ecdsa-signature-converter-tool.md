@@ -1,6 +1,6 @@
 ---
-title: (实用工具) ECDSA签名转换：ASN.1 ↔ R || S
-parent: Tools
+title: ECDSA签名转换：ASN.1 ↔ R || S
+nav:false
 ---
 
 # ECDSA签名转换：ASN.1 ↔ R || S

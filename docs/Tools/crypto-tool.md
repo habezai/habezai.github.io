@@ -1,6 +1,6 @@
 ---
-title: (实用工具)密码学工具箱
-parent: Tools
+title: 密码学工具箱
+nav:false
 ---
 
 # 密码工具箱

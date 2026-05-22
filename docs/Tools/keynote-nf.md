@@ -1,6 +1,6 @@
 ---
 title: KeyNote-NF
-parent: Tools
+nav:false
 ---
 
 KeyNote-NF 

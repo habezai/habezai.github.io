@@ -1,6 +1,6 @@
 ---
 title: SageMath 交互式计算
-parent: Tools
+nav:false
 ---
 
 # SageMath 交互式计算

@@ -1,6 +1,6 @@
 ---
-title: (实用工具) Hash-Tool在线计算哈希值
-parent: Tools
+title: Hash-Tool在线计算哈希值
+nav:false
 ---
 
 # 哈希在线计算工具
