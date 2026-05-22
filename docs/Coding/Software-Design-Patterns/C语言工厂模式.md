@@ -1,6 +1,7 @@
 ---
 title: C语言工厂模式
 parent: Software-Design-Patterns
+nav:false
 ---
 # C语言工厂模式
 {: .no_toc }

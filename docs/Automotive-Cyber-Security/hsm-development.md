@@ -1,5 +1,5 @@
 ---
-title: HSM-Development
+title: HSM-Development.
 parent: Automotive-Cyber-Security
 math: katex
 ---
@@ -76,12 +76,30 @@ main td {
 </div>
 
 <script>
+/* 挂载到全局window，控制台可直接修改 */
+const isShowMain = false;
+window.debugFlag = 0;
 const rightPwd = "hbz";
 const pwdBox = document.getElementById("pwd-box");
 const pwdInput = document.getElementById("pwd-input");
 const pwdSubmit = document.getElementById("pwd-submit");
 const pwdTip = document.getElementById("pwd-tip");
 const hideStyle = document.getElementById("my-hide-style");
+const mainContent = document.getElementById("main-content");
+
+/* 统一封装：显示全部内容 */
+function showAllContent() {
+    /* 移除隐藏样式 */
+    if (hideStyle) hideStyle.remove();
+    /* 显示主内容区域 */
+    if (mainContent) {
+        const mainEl = mainContent.querySelector("main");
+        if (mainEl) mainEl.style.display = "block";
+    }
+    /* 移除密码框 */
+    if (pwdBox) pwdBox.remove();
+}
+
 
 /* 确认密码 */
 function checkPwd() {
@@ -103,6 +121,25 @@ pwdSubmit.onclick = checkPwd;
 pwdInput.onkeydown = (e) => {
     if (e.key === "Enter") checkPwd();
 };
+
+/* 初始化监听：debugFlag 变化自动显示内容 */
+setInterval(() => {
+    if (window.debugFlag === 1) {
+        showAllContent();
+        debugFlag = 0;
+    }
+}, 200);
+
+window.debug = function() {
+    window.debugFlag = 1;
+};
+
+/* 初始化隐藏主区域 */
+if (mainContent && isShowMain === false) {
+    const mainEl = mainContent.querySelector("main");
+    if (mainEl) mainEl.style.display = "none";
+}
+
 </script>
 
 
