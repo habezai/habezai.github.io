@@ -64,14 +64,18 @@ aux_links:
 假设你已经安装了 [Jekyll](https://jekyllrb.com/) 和 [Bundler](https://bundler.io/)，
 
 
->安装
+- 安装
     1. [windows下安装Ruby(Ruby+DevKit )](https://rubyinstaller.org/downloads/)
-    2. gem install jekyll bundler
-    3.查看安装状态
-        ruby -v
-        jekyll -v
-        bundler -v
-
+    2. 
+```bash
+gem install jekyll bundler
+``` 
+    3. 查看安装状态
+```bash
+ruby -v
+jekyll -v
+bundler -v
+```
 
 - 修改你的工作目录到你的站点根目录。
 - 执行 `bundle install`.
