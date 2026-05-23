@@ -1,321 +1,216 @@
 ---
-title: AI Prompt Manager
+title: AI-Prompt-Manager
 nav:false
 ---
 
-# AI 提示词管理器
-基于 Just The Docs 的轻量化提示词编辑、优化、存储工具
+# AI 提示词管理器 | 本地永久存储版
+{: .no_toc }
+
+## 目录
+{: .no_toc .text-delta }
+1. TOC
+{:toc}
 
 <style>
-/* 全局JTD基础规范 */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+.prompt-container { margin: 2rem 0; }
+.prompt-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
 }
-
-:root {
-    --jtd-bg: #ffffff;
-    --jtd-text: #212121;
-    --jtd-border: #e5e7eb;
-    --jtd-primary: #2383e2;
-    --jtd-card: #f9fafb;
-    --jtd-btn-bg: #2383e2;
-    --jtd-btn-text: #fff;
-}
-
-[data-theme="dark"] {
-    --jtd-bg: #1f2937;
-    --jtd-text: #f3f4f6;
-    --jtd-border: #374151;
-    --jtd-primary: #60a5fa;
-    --jtd-card: #273444;
-    --jtd-btn-bg: #60a5fa;
-    --jtd-btn-text: #111827;
-}
-
-body {
-    background-color: var(--jtd-bg);
-    color: var(--jtd-text);
-    line-height: 1.6;
-    transition: all 0.3s ease;
-}
-
-/* JTD 页面容器 */
-.jtd-container {
-    max-width: 1200px;
-    margin: 20px auto;
-}
-
-/* JTD 头部导航 */
-.jtd-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 0;
-    border-bottom: 1px solid var(--jtd-border);
-    margin-bottom: 24px;
-}
-
-.jtd-title {
-    font-size: 22px;
-    font-weight: 600;
-    color: var(--jtd-primary);
-}
-
-/* 主题切换按钮 */
-.theme-btn {
-    padding: 8px 16px;
-    border: 1px solid var(--jtd-border);
+.prompt-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 0.5rem; }
+.prompt-content {
+    background: #fff;
+    padding: 0.8rem;
     border-radius: 6px;
-    background: var(--jtd-card);
-    color: var(--jtd-text);
-    cursor: pointer;
-    transition: 0.2s;
+    font-family: monospace;
+    white-space: pre-wrap;
+    margin-bottom: 0.6rem;
+    border: 1px solid #e5e7eb;
 }
-
-.theme-btn:hover {
-    border-color: var(--jtd-primary);
+.prompt-tag {
+    display: inline-block;
+    background: #dbeafe;
+    color: #1d4ed8;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    margin-right: 4px;
 }
-
-/* 主体布局：侧边分类 + 编辑区 */
-.jtd-main {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 24px;
-}
-
-/* 侧边栏分类 */
-.jtd-sidebar {
-    border: 1px solid var(--jtd-border);
-    border-radius: 8px;
-    padding: 16px;
-    background: var(--jtd-card);
-    height: fit-content;
-}
-
-.sidebar-title {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--jtd-border);
-}
-
-.category-item {
-    padding: 8px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-bottom: 4px;
-    font-size: 14px;
-    transition: 0.2s;
-}
-
-.category-item:hover, .category-item.active {
-    background: var(--jtd-primary);
-    color: var(--jtd-btn-text);
-}
-
-/* 编辑卡片 */
-.jtd-card {
-    border: 1px solid var(--jtd-border);
-    border-radius: 8px;
-    padding: 20px;
-    background: var(--jtd-card);
-}
-
-.card-title {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 16px;
-}
-
-/* 操作按钮组 */
-.btn-group {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-}
-
-.jtd-btn {
-    padding: 10px 20px;
+.prompt-btn {
+    padding: 6px 10px;
+    font-size: 0.85rem;
     border-radius: 6px;
     border: none;
     cursor: pointer;
-    font-size: 14px;
-    transition: 0.2s;
+    margin-right: 6px;
 }
-
-.btn-primary {
-    background: var(--jtd-btn-bg);
-    color: var(--jtd-btn-text);
+.btn-copy { background: #2563eb; color: white; }
+.btn-delete { background: #ef4444; color: white; }
+.btn-save { background: #16a34a; color: white; padding: 8px 16px; }
+.prompt-editor {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 1.2rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
 }
-
-.btn-default {
-    background: transparent;
-    border: 1px solid var(--jtd-border);
-    color: var(--jtd-text);
-}
-
-.jtd-btn:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-}
-
-/* 提示词编辑框 */
-#promptEditor {
+.prompt-editor input,
+.prompt-editor textarea,
+.prompt-editor select {
     width: 100%;
-    min-height: 400px;
-    padding: 16px;
-    border: 1px solid var(--jtd-border);
+    padding: 10px;
+    margin-bottom: 1rem;
+    border: 1px solid #e5e7eb;
     border-radius: 6px;
-    background: var(--jtd-bg);
-    color: var(--jtd-text);
-    font-size: 14px;
-    line-height: 1.8;
-    resize: vertical;
-    outline: none;
-    transition: 0.2s;
 }
-
-#promptEditor:focus {
-    border-color: var(--jtd-primary);
+.prompt-editor textarea { min-height: 140px; }
+.search-bar {
+    padding: 10px 14px;
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 1rem;
 }
-
-/* 提示弹窗 */
-.toast {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    padding: 12px 24px;
-    background: var(--jtd-primary);
-    color: #fff;
-    border-radius: 6px;
-    display: none;
-    z-index: 999;
-}
-
-/* 响应式适配 */
-@media (max-width: 768px) {
-    .jtd-main {
-        grid-template-columns: 1fr;
-    }
+.empty-tip {
+    color: #6b7280;
+    padding: 2rem;
+    text-align: center;
 }
 </style>
 
-<div class="jtd-container">
-    <header class="jtd-header">
-        <div class="jtd-title">AI 提示词管理器 | JTD 极简版</div>
-        <button class="theme-btn" id="themeBtn">切换暗夜模式</button>
-    </header>
+<div class="prompt-container">
+    <input class="search-bar" id="searchInput" placeholder="🔍 搜索提示词..." oninput="renderList()">
 
-    <div class="jtd-main">
-        <aside class="jtd-sidebar">
-            <div class="sidebar-title">快速模板库</div>
-            <div class="category-item active" data-tpl="empty">空白创作</div>
-            <div class="category-item" data-tpl="copywriting">文案创作</div>
-            <div class="category-item" data-tpl="code">编程开发</div>
-            <div class="category-item" data-tpl="office">办公辅助</div>
-            <div class="category-item" data-tpl="study">学习答疑</div>
-        </aside>
-
-        <section class="jtd-card">
-            <div class="card-title">提示词编辑工作台</div>
-            <div class="btn-group">
-                <button class="jtd-btn btn-primary" id="optimizeBtn">✨ AI一键优化</button>
-                <button class="jtd-btn btn-default" id="cleanBtn">🧹 格式净化</button>
-                <button class="jtd-btn btn-default" id="copyBtn">📋 一键复制</button>
-                <button class="jtd-btn btn-default" id="clearBtn">🗑️ 清空内容</button>
-            </div>
-            <textarea id="promptEditor" placeholder="在此输入/粘贴你的提示词，支持实时编辑、自动保存..."></textarea>
-        </section>
+    <div class="prompt-editor">
+        <h3>✏️ 创建/编辑提示词</h3>
+        <input id="editTitle" placeholder="标题：例如 编程助手">
+        <input id="editTag" placeholder="标签：例如 开发 / 文案 / 办公">
+        <textarea id="editContent" placeholder="输入你的提示词内容..."></textarea>
+        <button class="prompt-btn btn-save" onclick="savePrompt()">💾 保存到本地（永久存储）</button>
+        <button class="prompt-btn" onclick="clearEditor()">🧹 清空编辑器</button>
     </div>
+
+    <h3>📋 我的提示词库</h3>
+    <div id="promptList"></div>
 </div>
 
-<div class="toast" id="toast">操作成功！</div>
-
 <script>
-    /* 全局变量 */
-    const editor = document.getElementById('promptEditor');
-    const toast = document.getElementById('toast');
-    const themeBtn = document.getElementById('themeBtn');
+/* 本地存储 KEY */
+const STORAGE_KEY = "jtd-ai-prompts";
+let currentEditId = null;
 
-    /* 1. 主题切换功能 */
-    let isDark = false;
-    themeBtn.addEventListener('click', () => {
-        isDark = !isDark;
-        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-        themeBtn.innerText = isDark ? '切换明亮模式' : '切换暗夜模式';
-        showToast('主题切换成功');
-    });
-
-    /* 2. 本地自动存储 */
-    window.onload = () => {
-        const saveData = localStorage.getItem('jtd-prompt-data');
-        if (saveData) editor.value = saveData;
+/* 加载所有提示词 */
+function loadPrompts() {
+    try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        return data ? JSON.parse(data) : [];
+    } catch (e) {
+        console.error("加载失败", e);
+        return [];
     }
-    editor.addEventListener('input', () => {
-        localStorage.setItem('jtd-prompt-data', editor.value);
-    });
+}
 
-    /* 3. 模板快速调用 */
-    const tplList = {
-        empty: '',
-        copywriting: '请你作为专业文案师，根据我的需求创作优质内容，要求逻辑通顺、语句优美、贴合场景，输出结构化成品内容。我的需求：',
-        code: '请你作为资深开发工程师，帮我编写、优化、解析代码，要求代码简洁、无bug、注释清晰、适配场景。我的开发需求：',
-        office: '请你作为专业办公助手，帮我处理文案排版、总结、汇报、表格整理等办公工作，输出规范、正式、可用的内容。我的需求：',
-        study: '请你作为专业讲师，通俗易懂、细致全面地解答我的问题，循序渐进讲解知识点，适合新手学习。我的问题：'
-    };
-    document.querySelectorAll('.category-item').forEach(item => {
-        item.addEventListener('click', () => {
-            document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            editor.value = tplList[item.dataset.tpl];
-            localStorage.setItem('jtd-prompt-data', editor.value);
-            showToast('模板加载成功');
-        });
-    });
-
-    /* 4. AI一键优化（Demo模拟核心优化逻辑） */
-    document.getElementById('optimizeBtn').addEventListener('click', () => {
-        let text = editor.value.trim();
-        if (!text) return showToast('请输入提示词内容！');
-        let optimizeText = `【角色设定】专业AI助手，严格按照用户指令执行任务，输出精准、合规、高质量内容\n【任务指令】${text}\n【约束规则】1. 严格贴合用户核心需求，不冗余、不跑偏；2. 输出逻辑清晰、结构规整；3. 内容真实有效，无虚假信息\n【输出要求】结构化输出，排版整洁，适配主流AI对话场景`;
-        editor.value = optimizeText;
-        localStorage.setItem('jtd-prompt-data', editor.value);
-        showToast('AI优化完成！');
-    });
-
-    /* 5. 格式净化（去除冗余空格、空行） */
-    document.getElementById('cleanBtn').addEventListener('click', () => {
-        let text = editor.value;
-        text = text.replace(/\n+/g, '\n').replace(/ +/g, ' ').trim();
-        editor.value = text;
-        localStorage.setItem('jtd-prompt-data', editor.value);
-        showToast('格式净化完成！');
-    });
-
-    /* 6. 一键纯净复制 */
-    document.getElementById('copyBtn').addEventListener('click', async () => {
-        let text = editor.value.trim();
-        if (!text) return showToast('暂无内容可复制！');
-        await navigator.clipboard.writeText(text);
-        showToast('纯净内容已复制！');
-    });
-
-    /* 7. 清空内容 */
-    document.getElementById('clearBtn').addEventListener('click', () => {
-        editor.value = '';
-        localStorage.setItem('jtd-prompt-data', '');
-        showToast('内容已清空');
-    });
-
-    /* 弹窗提示工具 */
-    function showToast(msg) {
-        toast.innerText = msg;
-        toast.style.display = 'block';
-        setTimeout(() => toast.style.display = 'none', 2000);
+/* 保存（带防溢出保护） */
+function savePrompts(list) {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        return true;
+    } catch (e) {
+        if (e.name === "QuotaExceededError") {
+            alert("❌ 本地存储已满！请删除一些提示词再保存。");
+        } else {
+            alert("❌ 保存失败：" + e.message);
+        }
+        return false;
     }
+}
+
+/* 渲染列表 */
+function renderList() {
+    const list = loadPrompts();
+    const search = document.getElementById("searchInput").value.toLowerCase();
+    const container = document.getElementById("promptList");
+
+    const filtered = list.filter(item =>
+        item.title?.toLowerCase().includes(search) ||
+        item.content?.toLowerCase().includes(search) ||
+        item.tag?.toLowerCase().includes(search)
+    );
+
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-tip">暂无提示词，开始创建吧～</div>`;
+        return;
+    }
+
+    let html = "";
+    filtered.forEach((item, idx) => {
+        html += `
+        <div class="prompt-card">
+            <div class="prompt-title">${item.title || "无标题"}</div>
+            ${item.tag ? `<span class="prompt-tag">${item.tag}</span>` : ""}
+            <div class="prompt-content">${item.content}</div>
+            <button class="prompt-btn btn-copy" onclick="copyPrompt(${idx})">📋 复制</button>
+            <button class="prompt-btn btn-delete" onclick="deletePrompt(${idx})">🗑 删除</button>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+/* 保存提示词 */
+function savePrompt() {
+    const title = document.getElementById("editTitle").value.trim();
+    const tag = document.getElementById("editTag").value.trim();
+    const content = document.getElementById("editContent").value.trim();
+
+    if (!title || !content) {
+        alert("请填写标题和内容！");
+        return;
+    }
+
+    const list = loadPrompts();
+    list.push({
+        title,
+        tag,
+        content,
+        time: new Date().toLocaleString()
+    });
+
+    const ok = savePrompts(list);
+    if (ok) {
+        clearEditor();
+        renderList();
+    }
+}
+
+/* 复制 */
+function copyPrompt(index) {
+    const list = loadPrompts();
+    const content = list[index].content;
+    navigator.clipboard.writeText(content);
+    alert("✅ 已复制到剪贴板");
+}
+
+/* 删除 */
+function deletePrompt(index) {
+    if (!confirm("确定删除？")) return;
+    const list = loadPrompts();
+    list.splice(index, 1);
+    savePrompts(list);
+    renderList();
+}
+
+/* 清空编辑器 */
+function clearEditor() {
+    document.getElementById("editTitle").value = "";
+    document.getElementById("editTag").value = "";
+    document.getElementById("editContent").value = "";
+    currentEditId = null;
+}
+
+/* 初始化 */
+window.onload = renderList;
 </script>
