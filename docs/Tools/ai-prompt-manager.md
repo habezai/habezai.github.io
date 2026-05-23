@@ -3,13 +3,7 @@ title: AI-Prompt-Manager
 nav:false
 ---
 
-# AI 提示词管理器 | 本地永久存储版
-{: .no_toc }
-
-## 目录
-{: .no_toc .text-delta }
-1. TOC
-{:toc}
+# AI 提示词管理器 | 本地存储
 
 <style>
 .prompt-container { margin: 2rem 0; }
@@ -161,6 +155,7 @@ nav:false
 <script>
 const STORAGE_KEY = "jtd-ai-prompts";
 
+/* 加载原始数据 */
 function loadPrompts() {
     try {
         const data = localStorage.getItem(STORAGE_KEY);
@@ -170,6 +165,7 @@ function loadPrompts() {
     }
 }
 
+/* 保存到本地 */
 function savePrompts(list) {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
@@ -184,37 +180,47 @@ function savePrompts(list) {
     }
 }
 
+/* 渲染列表（已修复索引问题） */
 function renderList() {
-    const list = loadPrompts();
+    const originalList = loadPrompts();
     const search = document.getElementById("searchInput").value.toLowerCase();
     const container = document.getElementById("promptList");
 
-    const filtered = list.filter(item =>
+    /* 过滤 */
+    const filteredList = originalList.filter((item, realIndex) =>
         (item.title || "").toLowerCase().includes(search) ||
         (item.content || "").toLowerCase().includes(search) ||
         (item.tag || "").toLowerCase().includes(search)
     );
 
-    if (filtered.length === 0) {
+    if (filteredList.length === 0) {
         container.innerHTML = `<div class="empty-tip">暂无提示词，开始创建吧～</div>`;
         return;
     }
 
     let html = "";
-    filtered.forEach((item, idx) => {
+    filteredList.forEach((item) => {
+        /* 关键：获取这条数据在原始数组中的真实索引 */
+        const realIndex = originalList.findIndex(i => 
+            i.title === item.title && 
+            i.content === item.content && 
+            i.time === item.time
+        );
+
         html += `
         <div class="prompt-card">
             <div class="prompt-title">${item.title || "无标题"}</div>
             ${item.tag ? `<span class="prompt-tag">${item.tag}</span>` : ""}
             <div class="prompt-content">${item.content}</div>
-            <button class="prompt-btn btn-copy" onclick="copyPrompt(${idx})">📋 复制</button>
-            <button class="prompt-btn btn-delete" onclick="deletePrompt(${idx})">🗑 删除</button>
+            <button class="prompt-btn btn-copy" onclick="copyPrompt(${realIndex})">📋 复制</button>
+            <button class="prompt-btn btn-delete" onclick="deletePrompt(${realIndex})">🗑 删除</button>
         </div>`;
     });
 
     container.innerHTML = html;
 }
 
+/* 保存提示词 */
 function savePrompt() {
     const title = document.getElementById("editTitle").value.trim();
     const tag = document.getElementById("editTag").value.trim();
@@ -236,20 +242,23 @@ function savePrompt() {
     }
 }
 
-function copyPrompt(index) {
+/* 复制（使用真实索引） */
+function copyPrompt(realIndex) {
     const list = loadPrompts();
-    navigator.clipboard.writeText(list[index].content);
+    navigator.clipboard.writeText(list[realIndex].content);
     alert("✅ 已复制到剪贴板");
 }
 
-function deletePrompt(index) {
+/* 删除（使用真实索引） */
+function deletePrompt(realIndex) {
     if (!confirm("确定删除？")) return;
     const list = loadPrompts();
-    list.splice(index, 1);
+    list.splice(realIndex, 1);
     savePrompts(list);
     renderList();
 }
 
+/* 清空编辑器 */
 function clearEditor() {
     document.getElementById("editTitle").value = "";
     document.getElementById("editTag").value = "";
