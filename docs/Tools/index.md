@@ -8,7 +8,7 @@ title: Tools
 
 | 工具 | 描述 |
 | --- | --- |
-|[AI 提示词管理器](ai-prompt-manager)| 提示词存储,编辑,优化,管理工具 |
+|[AI 提示词管理器](ai-prompt-manager)| 提示词创建,存储,编辑,一键复制,过滤搜索,管理工具 |
 |[密码学工具箱](crypto-tool)| 提供密码学相关的数值计算工具 |
 |[ECDSA签名转换：ASN.1 ↔ R \|\| S](ecdsa-signature-converter-tool)| 将 ECDSA 签名转换为 ASN.1 格式，或从 ASN.1 格式转换为 ECDSA 签名 |
 |[哈希计算](hash-wasm-tool)| 计算给定输入的哈希值 |

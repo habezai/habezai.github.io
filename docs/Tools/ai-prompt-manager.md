@@ -151,9 +151,14 @@ nav:false
     <input
         class="search-bar"
         id="searchInput"
-        placeholder="🔍 搜索过滤提示词... 可搜 标题|标签|内容"
+        placeholder="🔍 以搜索关键词...过滤提示词库"
         oninput="renderList()"
     >
+    <h3>💡 使用说明</h3>
+    <ul> 
+        <li>常用用法: 直接搜索关键词, 基于关键字在标题or标签or内容中的匹配检索prompt词</li>
+        <li>高阶技巧(多关键词同时匹配): 搜索时以+号连接多个关键词,例如 搜 "myTitle+myTag+myContent" 即检索标题含有myTitle,且标签含有myTag,且内容含有myContent的提示词。(且俩+中间的关键词可以省略)</li>
+    </ul>
 
     <button class="create-btn" onclick="openModal()">➕ 创建新提示词</button>
 
@@ -224,11 +229,44 @@ function renderList() {
     const search = document.getElementById("searchInput").value.toLowerCase();
     const container = document.getElementById("promptList");
 
-    const filteredList = originalList.filter((item) =>
-        (item.title || "").toLowerCase().includes(search) ||
-        (item.content || "").toLowerCase().includes(search) ||
-        (item.tag || "").toLowerCase().includes(search)
-    ).reverse();
+    /* 高级多条件搜索 */
+    const searchText = search.trim();
+    const parts = searchText.split('+');
+    let titleKey = '', tagKey = '', contentKey = '';
+
+    if (parts.length === 0) {
+        titleKey = tagKey = contentKey = '';
+    } else if (parts.length === 1) {
+        /* 无加号：全字段 OR 搜索 */
+        titleKey = tagKey = contentKey = parts[0].trim().toLowerCase();
+    } else if (parts.length === 2) {
+        /* 1个加号：标题 + 标签 */
+        titleKey = parts[0].trim().toLowerCase();
+        tagKey = parts[1].trim().toLowerCase();
+        contentKey = '';
+    } else {
+        /* ≥2个加号：只取前两个作为分隔，标题+标签+内容 */
+        titleKey = parts[0].trim().toLowerCase();
+        tagKey = parts[1].trim().toLowerCase();
+        contentKey = parts[2].trim().toLowerCase();
+    }
+
+    const filteredList = originalList.filter(item => {
+        const t = (item.title || '').toLowerCase();
+        const g = (item.tag || '').toLowerCase();
+        const c = (item.content || '').toLowerCase();
+
+        if (parts.length === 1) {
+            /* OR：任意匹配 */
+            return t.includes(titleKey) || g.includes(tagKey) || c.includes(contentKey);
+        } else if (parts.length === 2) {
+            /* AND：标题 + 标签 */
+            return t.includes(titleKey) && g.includes(tagKey);
+        } else {
+            /* AND：标题 + 标签 + 内容 */
+            return t.includes(titleKey) && g.includes(tagKey) && c.includes(contentKey);
+        }
+    }).reverse();
 
     if (filteredList.length === 0) {
         container.innerHTML = `<div class="empty-tip">暂无提示词，开始创建吧～</div>`;
