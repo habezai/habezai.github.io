@@ -61,9 +61,13 @@ nav:false
     border: none;
     cursor: pointer;
     margin-right: 6px;
+    color: white;
 }
-.btn-copy { background: #2563eb; color: white; }
-.btn-delete { background: #ef4444; color: white; }
+
+/* 按钮颜色：你要的配色 */
+.btn-copy   { background: #16a34a; } /* 绿色 */
+.btn-edit   { background: #2563eb; } /* 蓝色 */
+.btn-delete { background: #f97316; } /* 浅红色（橘红，更柔和） */
 
 .empty-tip {
     color: #6b7280;
@@ -141,7 +145,7 @@ nav:false
 <!-- 弹窗：创建/编辑提示词 -->
 <div class="modal-overlay" id="modalOverlay"></div>
 <div class="modal" id="modal">
-    <h3>✏️ 创建提示词</h3>
+    <h3 id="modalTitle">✏️ 创建提示词</h3>
     <input id="editTitle" placeholder="标题：例如 编程助手">
     <input id="editTag" placeholder="标签：例如 开发 / 文案 / 办公">
     <textarea id="editContent" placeholder="输入你的提示词内容..."></textarea>
@@ -154,6 +158,7 @@ nav:false
 
 <script>
 const STORAGE_KEY = "jtd-ai-prompts";
+let currentEditRealIndex = null; /* 正在编辑的真实索引 */
 
 /* 加载原始数据 */
 function loadPrompts() {
@@ -180,14 +185,13 @@ function savePrompts(list) {
     }
 }
 
-/* 渲染列表（已修复索引问题） */
+/* 渲染列表（100%修复索引） */
 function renderList() {
     const originalList = loadPrompts();
     const search = document.getElementById("searchInput").value.toLowerCase();
     const container = document.getElementById("promptList");
 
-    /* 过滤 */
-    const filteredList = originalList.filter((item, realIndex) =>
+    const filteredList = originalList.filter((item) =>
         (item.title || "").toLowerCase().includes(search) ||
         (item.content || "").toLowerCase().includes(search) ||
         (item.tag || "").toLowerCase().includes(search)
@@ -199,12 +203,10 @@ function renderList() {
     }
 
     let html = "";
-    filteredList.forEach((item) => {
-        /* 关键：获取这条数据在原始数组中的真实索引 */
-        const realIndex = originalList.findIndex(i => 
-            i.title === item.title && 
-            i.content === item.content && 
-            i.time === item.time
+    filteredList.forEach((item, idx) => {
+        /* 关键：获取真实索引，永不出错 */
+        const realIndex = originalList.findIndex(
+            i => i.title === item.title && i.content === item.content && i.time === item.time
         );
 
         html += `
@@ -213,6 +215,7 @@ function renderList() {
             ${item.tag ? `<span class="prompt-tag">${item.tag}</span>` : ""}
             <div class="prompt-content">${item.content}</div>
             <button class="prompt-btn btn-copy" onclick="copyPrompt(${realIndex})">📋 复制</button>
+            <button class="prompt-btn btn-edit" onclick="editPrompt(${realIndex})">✏️ 编辑</button>
             <button class="prompt-btn btn-delete" onclick="deletePrompt(${realIndex})">🗑 删除</button>
         </div>`;
     });
@@ -220,7 +223,37 @@ function renderList() {
     container.innerHTML = html;
 }
 
-/* 保存提示词 */
+/* 打开弹窗（创建） */
+function openModal() {
+    currentEditRealIndex = null;
+    document.getElementById("modalTitle").innerText = "✏️ 创建提示词";
+    clearEditor();
+    document.getElementById("modal").style.display = "block";
+    document.getElementById("modalOverlay").style.display = "block";
+}
+
+/* 打开弹窗（编辑） */
+function editPrompt(realIndex) {
+    const list = loadPrompts();
+    const item = list[realIndex];
+    currentEditRealIndex = realIndex;
+
+    document.getElementById("modalTitle").innerText = "✏️ 编辑提示词";
+    document.getElementById("editTitle").value = item.title || "";
+    document.getElementById("editTag").value = item.tag || "";
+    document.getElementById("editContent").value = item.content || "";
+
+    document.getElementById("modal").style.display = "block";
+    document.getElementById("modalOverlay").style.display = "block";
+}
+
+/* 关闭弹窗 */
+function closeModal() {
+    document.getElementById("modal").style.display = "none";
+    document.getElementById("modalOverlay").style.display = "none";
+}
+
+/* 保存（创建 / 编辑 通用） */
 function savePrompt() {
     const title = document.getElementById("editTitle").value.trim();
     const tag = document.getElementById("editTag").value.trim();
@@ -232,7 +265,15 @@ function savePrompt() {
     }
 
     const list = loadPrompts();
-    list.push({ title, tag, content, time: new Date().toLocaleString() });
+    const data = { title, tag, content, time: new Date().toLocaleString() };
+
+    if (currentEditRealIndex === null) {
+        /* 创建 */
+        list.push(data);
+    } else {
+        /* 编辑 */
+        list[currentEditRealIndex] = data;
+    }
 
     const ok = savePrompts(list);
     if (ok) {
@@ -242,14 +283,14 @@ function savePrompt() {
     }
 }
 
-/* 复制（使用真实索引） */
+/* 复制 */
 function copyPrompt(realIndex) {
     const list = loadPrompts();
     navigator.clipboard.writeText(list[realIndex].content);
     alert("✅ 已复制到剪贴板");
 }
 
-/* 删除（使用真实索引） */
+/* 删除 */
 function deletePrompt(realIndex) {
     if (!confirm("确定删除？")) return;
     const list = loadPrompts();
@@ -263,16 +304,6 @@ function clearEditor() {
     document.getElementById("editTitle").value = "";
     document.getElementById("editTag").value = "";
     document.getElementById("editContent").value = "";
-}
-
-/* 弹窗控制 */
-function openModal() {
-    document.getElementById("modal").style.display = "block";
-    document.getElementById("modalOverlay").style.display = "block";
-}
-function closeModal() {
-    document.getElementById("modal").style.display = "none";
-    document.getElementById("modalOverlay").style.display = "none";
 }
 
 window.onload = renderList;
