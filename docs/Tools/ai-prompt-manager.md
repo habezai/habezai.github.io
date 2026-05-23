@@ -126,6 +126,25 @@ nav:false
     border-radius: 6px;
     cursor: pointer;
 }
+/* 轻量级悬浮提示条 */
+.toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1f2937;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
 </style>
 
 <div class="prompt-container">
@@ -158,7 +177,21 @@ nav:false
 
 <script>
 const STORAGE_KEY = "jtd-ai-prompts";
-let currentEditRealIndex = null; /* 正在编辑的真实索引 */
+let currentEditRealIndex = null;
+
+/* 轻量级提示：1秒自动消失 */
+function toast(msg) {
+    const el = document.createElement("div");
+    el.className = "toast";
+    el.innerText = msg;
+    document.body.appendChild(el);
+
+    setTimeout(() => el.classList.add("show"), 10);
+    setTimeout(() => {
+        el.classList.remove("show");
+        setTimeout(() => el.remove(), 300);
+    }, 1000);
+}
 
 /* 加载原始数据 */
 function loadPrompts() {
@@ -177,9 +210,9 @@ function savePrompts(list) {
         return true;
     } catch (e) {
         if (e.name === "QuotaExceededError") {
-            alert("❌ 本地存储已满！请删除一些提示词再保存。");
+            toast("❌ 本地存储已满！请删除一些提示词再保存。");
         } else {
-            alert("❌ 保存失败：" + e.message);
+            toast("❌ 保存失败：" + e.message);
         }
         return false;
     }
@@ -195,7 +228,7 @@ function renderList() {
         (item.title || "").toLowerCase().includes(search) ||
         (item.content || "").toLowerCase().includes(search) ||
         (item.tag || "").toLowerCase().includes(search)
-    );
+    ).reverse();
 
     if (filteredList.length === 0) {
         container.innerHTML = `<div class="empty-tip">暂无提示词，开始创建吧～</div>`;
@@ -260,7 +293,7 @@ function savePrompt() {
     const content = document.getElementById("editContent").value.trim();
 
     if (!title || !content) {
-        alert("请填写标题和内容！");
+        toast("请填写标题和内容！");
         return;
     }
 
@@ -287,7 +320,7 @@ function savePrompt() {
 function copyPrompt(realIndex) {
     const list = loadPrompts();
     navigator.clipboard.writeText(list[realIndex].content);
-    alert("✅ 已复制到剪贴板");
+    toast("✅ 已复制到剪贴板");
 }
 
 /* 删除 */
