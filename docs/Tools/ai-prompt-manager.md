@@ -208,12 +208,14 @@ nav:false
         placeholder="🔍 以搜索关键词...过滤提示词库"
         oninput="renderList()"
     >
-    <h3>💡 使用说明</h3>
+    <h3>💡 搜索使用说明</h3>
     <ul> 
         <li>常用用法: 直接搜索关键词, 基于关键字在标题or标签or内容中的匹配检索prompt词</li>
         <li>高阶技巧(多关键词同时匹配): 搜索时以+号连接多个关键词,例如 搜 "myTitle+myTag+myContent" 即检索标题含有myTitle,且标签含有myTag,且内容含有myContent的提示词。(且俩+中间的关键词可以省略)</li>
     </ul>
 
+    <button class="create-btn" onclick="selectWorkspaceFile()" style="background:#f59e0b;">📂 关联本地工作区(.json file)</button>
+    <div id="workspaceTip" style="margin-top:8px; font-size:14px; color:#666;"></div>
     <button class="create-btn" onclick="openModal()">➕ 创建新提示词</button>
     <button class="create-btn" onclick="exportAll()" style="background:#0891b2;">💾 导出全体数据(.json file)</button>
     <button class="create-btn" onclick="document.getElementById('import-file').click()" style="background:#8b5cf6;">📥 导入数据(.json file)</button>
@@ -282,6 +284,8 @@ nav:false
 const STORAGE_KEY = "jtd-ai-prompts";
 let currentEditRealIndex = null;
 let selectedIndexes = []; /* 批量选择ID集合 */
+let workspaceFileHandle = null; /* 本地文件句柄（核心）*/
+let workspaceFileName = null;  /* 保存的文件名*/
 
 /* 轻量级提示：1秒自动消失 */
 function toast(msg) {
@@ -454,6 +458,7 @@ function savePrompt() {
         closeModal();
         clearEditor();
         renderList();
+        syncToWorkspaceFile(); 
     }
 }
 
@@ -471,6 +476,7 @@ function deletePrompt(realIndex) {
     list.splice(realIndex, 1);
     savePrompts(list);
     renderList();
+    syncToWorkspaceFile(); 
 }
 
 /* 清空编辑器 */
@@ -515,6 +521,7 @@ function importFile(e) {
             savePrompts(merged);
             renderList();
             toast(`✅ 导入成功！新增 ${merged.length - curr.length} 条`);
+            syncToWorkspaceFile(); 
         } catch (e) {
             toast("❌ 导入失败：" + e.message);
         }
@@ -552,6 +559,7 @@ function confirmImportText() {
         closeImportTextModal();
         renderList();
         toast(`✅ 导入成功！新增 ${merged.length - curr.length} 条`);
+        syncToWorkspaceFile(); 
     } catch (e) {
         toast("❌ JSON格式错误：" + e.message);
     }
@@ -600,6 +608,7 @@ cmDelete.onclick = () => {
         savePrompts(list);
         renderList();
         toast("✅ 删除成功");
+        syncToWorkspaceFile(); 
     }
     cm.style.display = "none";
 };
@@ -615,6 +624,7 @@ cmBatchDelete.onclick = () => {
     selectedIndexes = [];
     renderList();
     toast("✅ 批量删除成功");
+    syncToWorkspaceFile(); 
     cm.style.display = "none";
 };
 
@@ -664,6 +674,57 @@ function selectNone() {
   selectedIndexes = [];
   renderList();
   toast('✅ 已取消全选');
+}
+
+/* ====================== 本地工作区自动同步 ====================== */
+async function selectWorkspaceFile() {
+    try {
+        /* 打开文件选择器，只选 json */
+        const [handle] = await window.showOpenFilePicker({
+            types: [{ description: 'JSON 文件', accept: { 'application/json': ['.json'] } }],
+            multiple: false
+        });
+        workspaceFileHandle = handle;
+        workspaceFileName = handle.name;
+        document.getElementById('workspaceTip').innerText = `✅ 已关联工作区：${workspaceFileName}`;
+        toast('✅ 本地工作区关联成功！后续操作将自动双向同步');
+
+        /* 关联后立即从文件加载数据 */
+        await loadFromWorkspaceFile();
+    } catch (e) {
+        toast('❌ 未选择文件或不支持');
+    }
+}
+
+/* 从本地 JSON 文件加载数据 */
+async function loadFromWorkspaceFile() {
+    if (!workspaceFileHandle) return;
+    try {
+        const file = await workspaceFileHandle.getFile();
+        const text = await file.text();
+        const data = JSON.parse(text);
+        if (Array.isArray(data)) {
+            savePrompts(data);
+            renderList();
+            toast('✅ 从本地工作区同步数据成功');
+        }
+    } catch (e) {
+        toast('❌ 工作区文件读取失败');
+    }
+}
+
+/* 保存 → 自动同步到本地文件（核心） */
+async function syncToWorkspaceFile() {
+    if (!workspaceFileHandle) return;
+    try {
+        const data = loadPrompts();
+        const json = JSON.stringify(data, null, 2);
+        const writable = await workspaceFileHandle.createWritable();
+        await writable.write(json);
+        await writable.close();
+    } catch (e) {
+        console.warn('同步本地文件失败', e);
+    }
 }
 
 window.onload = renderList;
