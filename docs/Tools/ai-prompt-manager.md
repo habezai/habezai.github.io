@@ -28,6 +28,25 @@ nav:false
     font-size: 0.95rem;
 }
 
+/* 操作按钮区域容器 */
+.action-buttons-container {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.action-buttons-container h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #1f2937;
+    font-size: 1.1rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+}
+
 .prompt-card {
     background: #f9fafb;
     border: 1px solid #e5e7eb;
@@ -214,12 +233,15 @@ nav:false
         <li>高阶技巧(多关键词同时匹配): 搜索时以+号连接多个关键词,例如 搜 "myTitle+myTag+myContent" 即检索标题含有myTitle,且标签含有myTag,且内容含有myContent的提示词。(且俩+中间的关键词可以省略)</li>
     </ul>
 
-    <button class="create-btn" onclick="selectWorkspaceFile()" style="background:#f59e0b;">📂 关联本地工作区(.json file)</button>
-    <div id="workspaceTip" style="margin-top:8px; font-size:14px; color:#666;"></div>
-    <button class="create-btn" onclick="openModal()">➕ 创建新提示词</button>
-    <button class="create-btn" onclick="exportAll()" style="background:#0891b2;">💾 导出全体数据(.json file)</button>
-    <button class="create-btn" onclick="document.getElementById('import-file').click()" style="background:#8b5cf6;">📥 导入数据(.json file)</button>
-    <button class="create-btn" onclick="openImportTextModal()" style="background:#10b981;">📥 导入数据(.json text)</button>
+    <div class="action-buttons-container">
+        <h3>📱 功能菜单 </h3>
+        <button class="create-btn" onclick="selectWorkspaceFile()" style="background:#f59e0b;">📂 关联本地工作区(.json file)</button>
+        <div id="workspaceTip" style="margin-top:8px; font-size:14px; color:#666;"></div>
+        <button class="create-btn" onclick="openModal()">➕ 创建新提示词</button>
+        <button class="create-btn" onclick="exportAll()" style="background:#0891b2;">💾 导出全体数据(.json file)</button>
+        <button class="create-btn" onclick="document.getElementById('import-file').click()" style="background:#8b5cf6;">📥 导入数据(.json file)</button>
+        <button class="create-btn" onclick="openImportTextModal()" style="background:#10b981;">📥 导入数据(.json text)</button>
+    </div>
 
 <input type="file" id="import-file" accept=".json" onchange="importFile(event)">
     <input type="file" id="import-file" accept=".json" onchange="importFile(event)">
