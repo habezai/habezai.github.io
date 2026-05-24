@@ -145,6 +145,51 @@ nav:false
     opacity: 1;
     transform: translateY(0);
 }
+/* 批量选择样式 */
+.prompt-card.selected {
+  background: #dcfce7 !important;
+  border: 1px solid #16a34a;
+}
+.dark-mode .prompt-card.selected {
+  background: #166534 !important;
+}
+.batch-bar {
+  margin: 10px 0;
+  display: flex;
+  gap: 8px;
+}
+.batch-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  color: white;
+}
+.btn-select-all { background: #2563eb; }
+.btn-select-none { background: #64748b; }
+.btn-batch-delete { background: #ef4444; }
+.btn-export { background: #0891b2; }
+.btn-import { background: #8b5cf6; }
+#import-file { display: none; }
+/* 右键菜单 */
+.context-menu {
+    position: fixed;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 9999;
+    padding: 6px 0;
+    display: none;
+}
+.context-menu-item {
+    padding: 6px 16px;
+    cursor: pointer;
+    font-size: 14px;
+}
+.context-menu-item:hover {
+    background: #f0f0f0;
+}
 </style>
 
 <div class="prompt-container">
@@ -161,6 +206,18 @@ nav:false
     </ul>
 
     <button class="create-btn" onclick="openModal()">➕ 创建新提示词</button>
+    <button class="create-btn" onclick="exportAll()" style="background:#0891b2;">💾 导出全体数据(.json file)</button>
+    <button class="create-btn" onclick="document.getElementById('import-file').click()" style="background:#8b5cf6;">📥 导入数据(.json file)</button>
+    <button class="create-btn" onclick="openImportTextModal()" style="background:#10b981;">📥 导入数据(.json text)</button>
+
+<input type="file" id="import-file" accept=".json" onchange="importFile(event)">
+    <input type="file" id="import-file" accept=".json" onchange="importFile(event)">
+
+    <!-- 批量操作栏 -->
+    <div class="batch-bar">
+    <button class="batch-btn btn-select-all" onclick="selectAll()">全选</button>
+    <button class="batch-btn btn-select-none" onclick="selectNone()">取消全选</button>
+    </div>
 
     <h3>📋 我的提示词库</h3>
     <div id="promptList"></div>
@@ -180,9 +237,42 @@ nav:false
     </div>
 </div>
 
+<!-- 导入JSON文本弹窗 -->
+<div class="modal-overlay" id="importTextOverlay"></div>
+<div class="modal" id="importTextModal">
+    <h3>📥 导入数据（JSON文本）</h3>
+    <textarea id="jsonTextArea" style="min-height:220px;" placeholder='示例：[
+  {
+    "title": "标题1",
+    "tag": "标签1",
+    "content": "内容1",
+    "time": "2026/5/23 21:14:45"
+  },
+  {
+    "title": "标题2",
+    "tag": "标签2",
+    "content": "内容2",
+    "time": "2026/5/23 21:19:49"
+  }
+]'></textarea>
+    <div class="modal-buttons">
+        <button class="modal-close" onclick="closeImportTextModal()">取消</button>
+        <button class="modal-save" onclick="confirmImportText()">确认导入</button>
+    </div>
+</div>
+
+<!-- 右键菜单 -->
+<div class="context-menu" id="contextMenu">
+    <div class="context-menu-item" id="cmDelete">删除</div>
+    <div class="context-menu-item" id="cmBatchDelete">批量删除</div>
+    <div class="context-menu-item" id="cmExportSingle">导出选中项到json</div>
+    <div class="context-menu-item" id="cmExportBatch">批量导出到json</div>
+</div>
+
 <script>
 const STORAGE_KEY = "jtd-ai-prompts";
 let currentEditRealIndex = null;
+let selectedIndexes = []; /* 批量选择ID集合 */
 
 /* 轻量级提示：1秒自动消失 */
 function toast(msg) {
@@ -281,7 +371,7 @@ function renderList() {
         );
 
         html += `
-        <div class="prompt-card">
+        <div class="prompt-card ${selectedIndexes.includes(realIndex) ? 'selected' : ''}" onclick="toggleSelect(${realIndex})" data-real-index="${realIndex}">
             <div class="prompt-title">${item.title || "无标题"}</div>
             ${item.tag ? `<span class="prompt-tag">${item.tag}</span>` : ""}
             <div class="prompt-content">${item.content}</div>
@@ -375,6 +465,192 @@ function clearEditor() {
     document.getElementById("editTitle").value = "";
     document.getElementById("editTag").value = "";
     document.getElementById("editContent").value = "";
+}
+
+/* ====================== 导入导出 ====================== */
+function exportAll() {
+  const list = loadPrompts();
+  const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'prompt-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  toast('✅ 导出成功');
+}
+
+function importFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = evt => {
+        try {
+            const data = JSON.parse(evt.target.result);
+            if (!Array.isArray(data)) throw new Error("格式错误");
+
+            const curr = loadPrompts();
+            const merged = [...curr];
+
+            for (const item of data) {
+                const exist = curr.some(i =>
+                    i.title === item.title &&
+                    i.tag === item.tag &&
+                    i.content === item.content
+                );
+                if (!exist) merged.push(item);
+            }
+
+            savePrompts(merged);
+            renderList();
+            toast(`✅ 导入成功！新增 ${merged.length - curr.length} 条`);
+        } catch (e) {
+            toast("❌ 导入失败：" + e.message);
+        }
+        e.target.value = "";
+    };
+    reader.readAsText(file);
+}
+
+/* 导入JSON文本 */
+function openImportTextModal() {
+    document.getElementById("importTextModal").style.display = "block";
+    document.getElementById("importTextOverlay").style.display = "block";
+}
+function closeImportTextModal() {
+    document.getElementById("importTextModal").style.display = "none";
+    document.getElementById("importTextOverlay").style.display = "none";
+}
+function confirmImportText() {
+    try {
+        const text = document.getElementById("jsonTextArea").value.trim();
+        const data = JSON.parse(text);
+        if (!Array.isArray(data)) throw new Error("必须是数组格式");
+
+        const curr = loadPrompts();
+        const merged = [...curr];
+
+        for (const item of data) {
+            const exist = curr.some(i =>
+                i.title === item.title && i.tag === item.tag && i.content === item.content
+            );
+            if (!exist) merged.push(item);
+        }
+
+        savePrompts(merged);
+        closeImportTextModal();
+        renderList();
+        toast(`✅ 导入成功！新增 ${merged.length - curr.length} 条`);
+    } catch (e) {
+        toast("❌ JSON格式错误：" + e.message);
+    }
+}
+
+/* 右键菜单 */
+let currentContextTarget = null;
+const cm = document.getElementById("contextMenu");
+const cmDelete = document.getElementById("cmDelete");
+const cmBatchDelete = document.getElementById("cmBatchDelete");
+const cmExportSingle = document.getElementById("cmExportSingle");
+const cmExportBatch = document.getElementById("cmExportBatch");
+
+document.addEventListener("contextmenu", (e) => {
+    const card = e.target.closest(".prompt-card");
+    if (!card) return;
+    e.preventDefault();
+
+    const realIndex = parseInt(card.dataset.realIndex);
+    currentContextTarget = card;
+
+    const selCount = selectedIndexes.length;
+    const isSingle = selCount === 0 || (selCount === 1 && selectedIndexes.includes(realIndex));
+
+    cm.style.left = e.clientX + "px";
+    cm.style.top = e.clientY + "px";
+    cm.style.display = "block";
+
+    cmDelete.style.display = isSingle ? "block" : "none";
+    cmBatchDelete.style.display = !isSingle && selCount > 0 ? "block" : "none";
+    cmExportSingle.style.display = isSingle ? "block" : "none";
+    cmExportBatch.style.display = !isSingle && selCount > 0 ? "block" : "none";
+});
+
+document.addEventListener("click", () => {
+    cm.style.display = "none";
+});
+
+/* 右键 - 删除单条 */
+cmDelete.onclick = () => {
+    const card = currentContextTarget;
+    const realIndex = parseInt(card.dataset.realIndex);
+    if (confirm("确定删除？")) {
+        const list = loadPrompts();
+        list.splice(realIndex, 1);
+        savePrompts(list);
+        renderList();
+        toast("✅ 删除成功");
+    }
+    cm.style.display = "none";
+};
+
+/* 右键 - 批量删除 */
+cmBatchDelete.onclick = () => {
+    if (selectedIndexes.length === 0) return;
+    if (!confirm("确定删除选中的 " + selectedIndexes.length + " 条？")) return;
+    let list = loadPrompts();
+    selectedIndexes.sort((a, b) => b - a);
+    selectedIndexes.forEach(i => list.splice(i, 1));
+    savePrompts(list);
+    selectedIndexes = [];
+    renderList();
+    toast("✅ 批量删除成功");
+    cm.style.display = "none";
+};
+
+/* 右键 - 导出单条 */
+cmExportSingle.onclick = () => {
+    const card = currentContextTarget;
+    const realIndex = parseInt(card.dataset.realIndex);
+    const list = loadPrompts();
+    const item = list[realIndex];
+    const blob = new Blob([JSON.stringify([item], null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "prompt-single-" + item.title.slice(0, 10) + ".json";
+    a.click();
+    toast("✅ 单条导出成功");
+    cm.style.display = "none";
+};
+
+/* 右键 - 批量导出 */
+cmExportBatch.onclick = () => {
+    const list = loadPrompts();
+    const selectedItems = selectedIndexes.map(i => list[i]);
+    const blob = new Blob([JSON.stringify(selectedItems, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "prompt-batch.json";
+    a.click();
+    toast("✅ 批量导出成功");
+    cm.style.display = "none";
+};
+
+/* ====================== 批量选择 ====================== */
+function toggleSelect(realIndex) {
+  const i = selectedIndexes.indexOf(realIndex);
+  i === -1 ? selectedIndexes.push(realIndex) : selectedIndexes.splice(i, 1);
+  renderList();
+}
+
+function selectAll() {
+  const list = loadPrompts();
+  selectedIndexes = list.map((_, idx) => idx);
+  renderList();
+  toast('✅ 已全选');
+}
+
+function selectNone() {
+  selectedIndexes = [];
+  renderList();
+  toast('✅ 已取消全选');
 }
 
 window.onload = renderList;
