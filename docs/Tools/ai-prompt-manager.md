@@ -235,8 +235,10 @@ nav:false
 
     <div class="action-buttons-container">
         <h3>📱 功能菜单 </h3>
-        <button class="create-btn" onclick="selectWorkspaceFile()" style="background:#f59e0b;">📂 关联本地工作区(.json file)</button>
-        <div id="workspaceTip" style="margin-top:8px; font-size:14px; color:#666;"></div>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.2rem;">
+            <button class="create-btn" onclick="selectWorkspaceFile()" style="background:#f59e0b; margin-bottom:0;">📂 关联本地工作区(.json file)</button>
+            <div id="workspaceTip" style="font-size:14px; color:#666;"></div>
+        </div>
         <button class="create-btn" onclick="openModal()">➕ 创建新提示词</button>
         <button class="create-btn" onclick="exportAll()" style="background:#0891b2;">💾 导出全体数据(.json file)</button>
         <button class="create-btn" onclick="document.getElementById('import-file').click()" style="background:#8b5cf6;">📥 导入数据(.json file)</button>
