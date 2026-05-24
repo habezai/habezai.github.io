@@ -266,6 +266,14 @@ nav:false
                 <li>高阶技巧(多关键词同时匹配): 搜索时以+号连接多个关键词,例如 搜 "myTitle+myTag+myContent" 即检索标题含有myTitle,且标签含有myTag,且内容含有myContent的提示词。(且俩+中间的关键词可以省略)</li>
             </ul>
         </div>
+        <div class="action-menu-container" id="backupRestoreContainer" style="display:none;">
+            <h3>⏰ 历史版本恢复</h3>
+            <div style="font-size:13px; color:#666; margin-bottom:1rem;">每偶数整分钟自动备份，可恢复到历史版本</div>
+            <button class="create-btn" onclick="restoreToVersion(-2)" style="background:#f59e0b; margin-bottom:0.8rem;">⏪ 倒退回2分钟前的版本</button>
+            <button class="create-btn" onclick="restoreToVersion(-4)" style="background:#f59e0b; margin-bottom:0.8rem;">⏪ 倒退回4分钟前的版本</button>
+            <button class="create-btn" onclick="restoreToVersion(-8)" style="background:#f59e0b; margin-bottom:0;">⏪ 倒退回8分钟前的版本</button>
+
+        </div>
     </div>
 </div>
 
@@ -325,6 +333,17 @@ let selectedIndexes = []; /* 批量选择ID集合 */
 let workspaceFileHandle = null; /* 本地文件句柄（核心）*/
 let workspaceFileName = null;  /* 保存的文件名*/
 let lastToastTime = 0;  /* 上次toast调用时间 */
+let historyVersions = {
+    '-2': { data: null, timestamp: null },
+    '-4': { data: null, timestamp: null },
+    '-6': { data: null, timestamp: null },
+    '-8': { data: null, timestamp: null }
+};
+
+let lastBackupTime = 0;
+let backupTimer = null;
+let initialVersion = null;
+
 
 /* 轻量级提示：1秒自动消失，至少间隔1000ms */
 function toast(msg) {
@@ -540,7 +559,7 @@ function exportAll() {
   const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'prompt-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.download = 'prompt-export-' + new Date().toISOString().slice(0,10) + '.json';
   a.click();
   toast('✅ 导出成功');
 }
@@ -727,7 +746,6 @@ function selectNone() {
 /* ====================== 本地工作区自动同步 ====================== */
 async function selectWorkspaceFile() {
     try {
-        /* 打开文件选择器，只选 json */
         const [handle] = await window.showOpenFilePicker({
             types: [{ description: 'JSON 文件', accept: { 'application/json': ['.json'] } }],
             multiple: false
@@ -737,12 +755,14 @@ async function selectWorkspaceFile() {
         document.getElementById('workspaceTip').innerText = `✅ 已关联工作区：${workspaceFileName}`;
         toast('✅ 本地工作区关联成功！\n后续操作将自动双向同步');
 
-        /* 关联后立即从文件加载数据 */
         await loadFromWorkspaceFile();
+        
+        initializeBackupSystem();
     } catch (e) {
         toast('❌ 未选择文件或不支持');
     }
 }
+
 
 /* 从本地 JSON 文件加载数据 */
 async function loadFromWorkspaceFile() {
@@ -755,11 +775,16 @@ async function loadFromWorkspaceFile() {
             savePrompts(data);
             renderList();
             toast('✅ 从本地工作区同步数据成功');
+            
+            if (!initialVersion) {
+                initializeBackupSystem();
+            }
         }
     } catch (e) {
         toast('❌ 工作区文件读取失败');
     }
 }
+
 
 /* 保存 → 自动同步到本地文件（核心） */
 async function syncToWorkspaceFile() {
@@ -774,6 +799,129 @@ async function syncToWorkspaceFile() {
         console.warn('同步本地文件失败', e);
     }
 }
+
+function initializeBackupSystem() {
+    const currentData = loadPrompts();
+    const now = new Date();
+    initialVersion = JSON.parse(JSON.stringify(currentData));
+    
+    const timestamp = now;
+    
+    historyVersions['-2'] = { data: JSON.parse(JSON.stringify(currentData)), timestamp: timestamp };
+    historyVersions['-4'] = { data: JSON.parse(JSON.stringify(currentData)), timestamp: timestamp };
+    historyVersions['-6'] = { data: JSON.parse(JSON.stringify(currentData)), timestamp: timestamp };
+    historyVersions['-8'] = { data: JSON.parse(JSON.stringify(currentData)), timestamp: timestamp };
+    
+    document.getElementById('backupRestoreContainer').style.display = 'block';
+    
+    updateButtonLabels();
+    startBackupTimer();
+}
+
+
+function startBackupTimer() {
+    if (backupTimer) clearInterval(backupTimer);
+    
+    backupTimer = setInterval(() => {
+        const now = new Date();
+        const minutes = now.getMinutes();
+        
+        if (minutes % 2 === 0 && now.getSeconds() === 0) {
+            updateHistoryVersions();
+        }
+    }, 1000);
+}
+
+function updateHistoryVersions() {
+    const currentData = loadPrompts();
+    const currentCopy = JSON.parse(JSON.stringify(currentData));
+    const now = new Date();
+    
+    historyVersions['-8'] = historyVersions['-6'];
+    historyVersions['-6'] = historyVersions['-4'];
+    historyVersions['-4'] = historyVersions['-2'];
+    historyVersions['-2'] = { data: currentCopy, timestamp: now };
+    
+    console.log('历史版本已更新:', now.toLocaleTimeString());
+    updateButtonLabels();
+}
+
+function updateButtonLabels() {
+    const buttons = [
+        { offset: '-2', element: null },
+        { offset: '-4', element: null },
+        { offset: '-8', element: null }
+    ];
+    
+    const container = document.getElementById('backupRestoreContainer');
+    const buttonElements = container.querySelectorAll('button[onclick^="restoreToVersion"]');
+    
+    buttonElements.forEach((btn, index) => {
+        const offset = buttons[index].offset;
+        const version = historyVersions[offset];
+        
+        if (version && version.timestamp) {
+            const date = version.timestamp;
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            btn.textContent = `⏪ 倒退回${year}-${month}${day}-${hours}:${minutes}的版本`;
+        } else {
+            const minutes = Math.abs(parseInt(offset));
+            btn.textContent = `⏪ 倒退回${minutes}分钟前的版本`;
+        }
+    });
+}
+
+async function restoreToVersion(versionOffset) {
+    let targetVersion;
+    
+    switch(versionOffset) {
+        case -2:
+            targetVersion = historyVersions['-2'];
+            break;
+        case -4:
+            targetVersion = historyVersions['-4'];
+            break;
+        case -8:
+            targetVersion = historyVersions['-8'];
+            break;
+        default:
+            toast('❌ 无效的版本偏移量');
+            return;
+    }
+    
+    if (!targetVersion || !targetVersion.data) {
+        toast('❌ 该版本暂无数据');
+        return;
+    }
+    
+    const restoredData = JSON.parse(JSON.stringify(targetVersion.data));
+    
+    savePrompts(restoredData);
+    renderList();
+    
+    if (workspaceFileHandle) {
+        try {
+            const json = JSON.stringify(restoredData, null, 2);
+            const writable = await workspaceFileHandle.createWritable();
+            await writable.write(json);
+            await writable.close();
+            
+            const date = targetVersion.timestamp;
+            const timeStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}-${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+            toast(`✅ 已恢复到${timeStr}的版本，本地文件已同步`);
+        } catch (e) {
+            toast(`✅ 已恢复到历史版本，但本地文件同步失败`);
+        }
+    } else {
+        toast(`✅ 已恢复到历史版本`);
+    }
+}
+
 
 window.onload = renderList;
 </script>
