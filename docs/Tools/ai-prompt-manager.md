@@ -28,8 +28,8 @@ nav:false
     font-size: 0.95rem;
 }
 
-/* 操作按钮区域容器 */
-.action-buttons-container {
+/* 菜单区域容器 */
+.action-menu-container {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
@@ -38,7 +38,7 @@ nav:false
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.action-buttons-container h3 {
+.action-menu-container h3 {
     margin-top: 0;
     margin-bottom: 1rem;
     color: #1f2937;
@@ -227,13 +227,15 @@ nav:false
         placeholder="🔍 以搜索关键词...过滤提示词库"
         oninput="renderList()"
     >
+    <div class="action-menu-container">
     <h3>💡 搜索使用说明</h3>
     <ul> 
         <li>常用用法: 直接搜索关键词, 基于关键字在标题or标签or内容中的匹配检索prompt词</li>
         <li>高阶技巧(多关键词同时匹配): 搜索时以+号连接多个关键词,例如 搜 "myTitle+myTag+myContent" 即检索标题含有myTitle,且标签含有myTag,且内容含有myContent的提示词。(且俩+中间的关键词可以省略)</li>
     </ul>
+    </div>
 
-    <div class="action-buttons-container">
+    <div class="action-menu-container">
         <h3>📱 功能菜单 </h3>
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.2rem;">
             <button class="create-btn" onclick="selectWorkspaceFile()" style="background:#f59e0b; margin-bottom:0;">📂 关联本地工作区(.json file)</button>
