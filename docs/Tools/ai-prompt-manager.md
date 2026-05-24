@@ -54,13 +54,22 @@ nav:false
     font-size: 0.75rem;
     margin-right: 4px;
 }
+.prompt-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+}
+.prompt-left-btns {
+    display: flex;
+    gap: 6px;
+}
 .prompt-btn {
     padding: 6px 10px;
     font-size: 0.85rem;
     border-radius: 6px;
     border: none;
     cursor: pointer;
-    margin-right: 6px;
     color: white;
 }
 
@@ -375,9 +384,13 @@ function renderList() {
             <div class="prompt-title">${item.title || "无标题"}</div>
             ${item.tag ? `<span class="prompt-tag">${item.tag}</span>` : ""}
             <div class="prompt-content">${item.content}</div>
-            <button class="prompt-btn btn-copy" onclick="copyPrompt(${realIndex})">📋 复制</button>
-            <button class="prompt-btn btn-edit" onclick="editPrompt(${realIndex})">✏️ 编辑</button>
-            <button class="prompt-btn btn-delete" onclick="deletePrompt(${realIndex})">🗑 删除</button>
+            <div class="prompt-actions">
+                <div class="prompt-left-btns">
+                    <button class="prompt-btn btn-copy" onclick="copyPrompt(${realIndex})">📋 复制</button>
+                    <button class="prompt-btn btn-edit" onclick="editPrompt(${realIndex})">✏️ 编辑</button>
+                </div>
+                <button class="prompt-btn btn-delete" onclick="deletePrompt(${realIndex})">🗑 删除</button>
+            </div>
         </div>`;
     });
 
