@@ -308,9 +308,19 @@ let currentEditRealIndex = null;
 let selectedIndexes = []; /* 批量选择ID集合 */
 let workspaceFileHandle = null; /* 本地文件句柄（核心）*/
 let workspaceFileName = null;  /* 保存的文件名*/
+let lastToastTime = 0;  /* 上次toast调用时间 */
 
-/* 轻量级提示：1秒自动消失 */
+/* 轻量级提示：1秒自动消失，至少间隔1000ms */
 function toast(msg) {
+    const now = Date.now();
+    const timeSinceLastToast = now - lastToastTime;
+    
+    if (timeSinceLastToast < 1000) {
+        setTimeout(() => toast(msg), 1000 - timeSinceLastToast);
+        return;
+    }
+    
+    lastToastTime = now;
     const el = document.createElement("div");
     el.className = "toast";
     el.innerText = msg;
@@ -709,7 +719,7 @@ async function selectWorkspaceFile() {
         workspaceFileHandle = handle;
         workspaceFileName = handle.name;
         document.getElementById('workspaceTip').innerText = `✅ 已关联工作区：${workspaceFileName}`;
-        toast('✅ 本地工作区关联成功！后续操作将自动双向同步');
+        toast('✅ 本地工作区关联成功！\n后续操作将自动双向同步');
 
         /* 关联后立即从文件加载数据 */
         await loadFromWorkspaceFile();
