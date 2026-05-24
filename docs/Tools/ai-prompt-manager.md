@@ -6,7 +6,13 @@ nav:false
 # AI 提示词管理器 | 本地存储
 
 <style>
-.prompt-container { margin: 2rem 0; }
+.prompt-container { margin: 2rem 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+
+/* 左侧内容区域 */
+.left-content { display: flex; flex-direction: column; }
+
+/* 右侧内容区域 */
+.right-content { display: flex; flex-direction: column; }
 
 .search-bar {
     padding: 10px 14px;
@@ -221,44 +227,50 @@ nav:false
 </style>
 
 <div class="prompt-container">
-    <input
-        class="search-bar"
-        id="searchInput"
-        placeholder="🔍 以搜索关键词...过滤提示词库"
-        oninput="renderList()"
-    >
-    <div class="action-menu-container">
-    <h3>💡 搜索使用说明</h3>
-    <ul> 
-        <li>常用用法: 直接搜索关键词, 基于关键字在标题or标签or内容中的匹配检索prompt词</li>
-        <li>高阶技巧(多关键词同时匹配): 搜索时以+号连接多个关键词,例如 搜 "myTitle+myTag+myContent" 即检索标题含有myTitle,且标签含有myTag,且内容含有myContent的提示词。(且俩+中间的关键词可以省略)</li>
-    </ul>
+    <!-- 左侧内容：搜索框、全选、提示词库 -->
+    <div class="left-content">
+        <input
+            class="search-bar"
+            id="searchInput"
+            placeholder="🔍 以搜索关键词...过滤提示词库"
+            oninput="renderList()"
+        >
+        
+        <h3>📋 我的提示词库</h3>
+        <!-- 批量操作栏 -->
+        <div class="batch-bar">
+            <button class="batch-btn btn-select-all" onclick="selectAll()">全选</button>
+            <button class="batch-btn btn-select-none" onclick="selectNone()">取消全选</button>
+        </div>
+        <div id="promptList"></div>
     </div>
 
-    <div class="action-menu-container">
-        <h3>📱 功能菜单 </h3>
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.2rem;">
-            <button class="create-btn" onclick="selectWorkspaceFile()" style="background:#f59e0b; margin-bottom:0;">📂 关联本地工作区(.json file)</button>
-            <div id="workspaceTip" style="font-size:14px; color:#666;"></div>
+    <!-- 右侧内容：搜索说明、功能菜单 -->
+    <div class="right-content">
+        <div class="action-menu-container">
+            <h3>📱 功能菜单 </h3>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.2rem;">
+                <button class="create-btn" onclick="selectWorkspaceFile()" style="background:#f59e0b; margin-bottom:0;">📂 关联本地工作区(.json file)</button>
+                <div id="workspaceTip" style="font-size:14px; color:#666;"></div>
+            </div>
+            <button class="create-btn" onclick="openModal()">➕ 创建新提示词</button>
+            <button class="create-btn" onclick="exportAll()" style="background:#0891b2;">💾 导出全体数据(.json file)</button>
+            <button class="create-btn" onclick="document.getElementById('import-file').click()" style="background:#8b5cf6;">📥 导入数据(.json file)</button>
+            <button class="create-btn" onclick="openImportTextModal()" style="background:#10b981;">📥 导入数据(.json text)</button>
         </div>
-        <button class="create-btn" onclick="openModal()">➕ 创建新提示词</button>
-        <button class="create-btn" onclick="exportAll()" style="background:#0891b2;">💾 导出全体数据(.json file)</button>
-        <button class="create-btn" onclick="document.getElementById('import-file').click()" style="background:#8b5cf6;">📥 导入数据(.json file)</button>
-        <button class="create-btn" onclick="openImportTextModal()" style="background:#10b981;">📥 导入数据(.json text)</button>
+
+        <div class="action-menu-container">
+            <h3>💡 搜索使用说明</h3>
+            <ul> 
+                <li>常用用法: 直接搜索关键词, 基于关键字在标题or标签or内容中的匹配检索prompt词</li>
+                <li>高阶技巧(多关键词同时匹配): 搜索时以+号连接多个关键词,例如 搜 "myTitle+myTag+myContent" 即检索标题含有myTitle,且标签含有myTag,且内容含有myContent的提示词。(且俩+中间的关键词可以省略)</li>
+            </ul>
+        </div>
     </div>
+</div>
 
 <input type="file" id="import-file" accept=".json" onchange="importFile(event)">
-    <input type="file" id="import-file" accept=".json" onchange="importFile(event)">
-
-    <!-- 批量操作栏 -->
-    <div class="batch-bar">
-    <button class="batch-btn btn-select-all" onclick="selectAll()">全选</button>
-    <button class="batch-btn btn-select-none" onclick="selectNone()">取消全选</button>
-    </div>
-
-    <h3>📋 我的提示词库</h3>
-    <div id="promptList"></div>
-</div>
+<input type="file" id="import-file" accept=".json" onchange="importFile(event)">
 
 <!-- 弹窗：创建/编辑提示词 -->
 <div class="modal-overlay" id="modalOverlay"></div>
