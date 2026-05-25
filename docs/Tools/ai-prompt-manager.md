@@ -341,6 +341,43 @@ let historyVersions = {
     '-8': { data: null, timestamp: null }
 };
 
+/* 快捷键：Ctrl + Enter 打开创建提示词弹窗 */
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        openModal();
+    }
+    
+    const activeElement = document.activeElement;
+    const isInputFocused = activeElement && (
+        activeElement.tagName === 'INPUT' || 
+        activeElement.tagName === 'TEXTAREA' || 
+        activeElement.isContentEditable
+    );
+    
+    if (e.key === 'Escape' && isInputFocused) {
+        e.preventDefault();
+        activeElement.blur();
+        return;
+    }
+    
+    if (!isInputFocused) {
+        if (e.key === '/') {
+            e.preventDefault();
+            document.getElementById('searchInput').focus();
+        } else if (e.key === 'j') {
+            e.preventDefault();
+            window.scrollBy(0, 100);
+        } else if (e.key === 'k') {
+            e.preventDefault();
+            window.scrollBy(0, -100);
+        } else if (e.key === 'G') {
+            e.preventDefault();
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+    }
+});
+
 let lastBackupTime = 0;
 let backupTimer = null;
 let initialVersion = null;
