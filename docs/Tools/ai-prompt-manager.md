@@ -24,12 +24,13 @@ nav:false
 
 .create-btn {
     display: inline-block;
-    background: #2563eb;
+    background: #9cbcffff;
     color: white;
     border: none;
     padding: 10px 18px;
     border-radius: 8px;
     cursor: pointer;
+    margin-top: 1.2rem;
     margin-bottom: 1.2rem;
     font-size: 0.95rem;
 }
@@ -237,6 +238,7 @@ nav:false
         >
         
         <h3>📋 我的提示词库</h3>
+        <button class="create-btn" onclick="openModal()">➕ 创建新提示词</button>
         <!-- 批量操作栏 -->
         <div class="batch-bar">
             <button class="batch-btn btn-select-all" onclick="selectAll()">全选</button>
@@ -253,7 +255,6 @@ nav:false
                 <button class="create-btn" onclick="selectWorkspaceFile()" style="background:#f59e0b; margin-bottom:0;">📂 关联本地工作区(.json file)</button>
                 <div id="workspaceTip" style="font-size:14px; color:#666;"></div>
             </div>
-            <button class="create-btn" onclick="openModal()">➕ 创建新提示词</button>
             <button class="create-btn" onclick="exportAll()" style="background:#0891b2;">💾 导出全体数据(.json file)</button>
             <button class="create-btn" onclick="document.getElementById('import-file').click()" style="background:#8b5cf6;">📥 导入数据(.json file)</button>
             <button class="create-btn" onclick="openImportTextModal()" style="background:#10b981;">📥 导入数据(.json text)</button>
