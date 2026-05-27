@@ -225,6 +225,132 @@ nav:false
 .context-menu-item:hover {
     background: #f0f0f0;
 }
+
+/* 命令行模式样式 */
+.command-line-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #1e1e1e;
+    border-top: 2px solid #333;
+    z-index: 10000;
+    display: none;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+}
+.command-line-container.active {
+    display: block;
+}
+.command-line-input {
+    width: 100%;
+    background: #1e1e1e;
+    color: #00ff00;
+    border: none;
+    padding: 12px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    outline: none;
+}
+.command-line-input::placeholder {
+    color: #666;
+}
+.command-line-suggestions {
+    position: absolute;
+    bottom: 45px;
+    left: 16px;
+    background: #2d2d2d;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 8px 0;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    z-index: 10001;
+}
+.command-line-suggestions.active {
+    display: block;
+}
+.command-suggestion {
+    padding: 6px 16px;
+    color: #aaa;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+.command-suggestion:hover,
+.command-suggestion.selected {
+    background: #3d3d3d;
+    color: #00ff00;
+}
+.command-suggestion .cmd {
+    color: #00ff00;
+    font-weight: bold;
+}
+.command-suggestion .desc {
+    color: #888;
+    margin-left: 8px;
+}
+
+/* 帮助弹窗样式 */
+.help-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1e1e1e;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 10002;
+    display: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.help-modal.active {
+    display: block;
+}
+.help-modal h3 {
+    color: #00ff00;
+    margin-top: 0;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+}
+.help-section {
+    margin-bottom: 15px;
+}
+.help-section h4 {
+    color: #ff6b6b;
+    margin: 10px 0 5px 0;
+}
+.help-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    color: #ccc;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+.help-item .key {
+    color: #00ff00;
+    font-weight: bold;
+}
+.help-item .desc {
+    color: #888;
+}
+.help-close {
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+.help-close:hover {
+    background: #ff5252;
+}
 </style>
 
 <div class="prompt-container">
@@ -327,6 +453,53 @@ nav:false
     <div class="context-menu-item" id="cmExportBatch">批量导出到json</div>
 </div>
 
+<!-- 命令行模式 -->
+<div class="command-line-container" id="commandLineContainer">
+    <input type="text" class="command-line-input" id="commandLineInput" placeholder="输入命令 (按 : 进入，按 Esc 退出，输入 :h 查看帮助)">
+    <div class="command-line-suggestions" id="commandSuggestions"></div>
+</div>
+
+<!-- 帮助弹窗 -->
+<div class="help-modal" id="helpModal">
+    <h3>🎹 Vim 快捷键帮助</h3>
+    <div class="help-section">
+        <h4>📜 基础导航</h4>
+        <div class="help-item"><span class="key">j</span><span class="desc">向下滚动</span></div>
+        <div class="help-item"><span class="key">k</span><span class="desc">向上滚动</span></div>
+        <div class="help-item"><span class="key">gg</span><span class="desc">跳转到页面顶部</span></div>
+        <div class="help-item"><span class="key">G</span><span class="desc">跳转到页面底部</span></div>
+        <div class="help-item"><span class="key">Ctrl + d</span><span class="desc">向下翻半页</span></div>
+        <div class="help-item"><span class="key">Ctrl + u</span><span class="desc">向上翻半页</span></div>
+        <div class="help-item"><span class="key">Ctrl + f</span><span class="desc">向下翻一页</span></div>
+        <div class="help-item"><span class="key">Ctrl + b</span><span class="desc">向上翻一页</span></div>
+    </div>
+    <div class="help-section">
+        <h4>🔍 搜索与操作</h4>
+        <div class="help-item"><span class="key">/</span><span class="desc">聚焦搜索框</span></div>
+        <div class="help-item"><span class="key">:</span><span class="desc">进入命令行模式</span></div>
+        <div class="help-item"><span class="key">Esc</span><span class="desc">退出输入/命令模式</span></div>
+        <div class="help-item"><span class="key">Ctrl + Enter</span><span class="desc">创建新提示词</span></div>
+    </div>
+    <div class="help-section">
+        <h4>💻 命令行命令</h4>
+        <div class="help-item"><span class="key">:w</span><span class="desc">导出数据</span></div>
+        <div class="help-item"><span class="key">:e</span><span class="desc">导入数据</span></div>
+        <div class="help-item"><span class="key">:n</span><span class="desc">创建新提示词</span></div>
+        <div class="help-item"><span class="key">:d</span><span class="desc">删除选中项</span></div>
+        <div class="help-item"><span class="key">:a</span><span class="desc">全选</span></div>
+        <div class="help-item"><span class="key">:A</span><span class="desc">取消全选</span></div>
+        <div class="help-item"><span class="key">:c</span><span class="desc">清空搜索</span></div>
+        <div class="help-item"><span class="key">:h</span><span class="desc">显示帮助</span></div>
+        <div class="help-item"><span class="key">:q</span><span class="desc">关闭帮助/退出</span></div>
+    </div>
+    <div class="help-section">
+        <h4>🔢 数字前缀</h4>
+        <div class="help-item"><span class="key">10j</span><span class="desc">向下滚动10次</span></div>
+        <div class="help-item"><span class="key">5k</span><span class="desc">向上滚动5次</span></div>
+    </div>
+    <button class="help-close" onclick="closeHelpModal()">关闭</button>
+</div>
+
 <script>
 const STORAGE_KEY = "jtd-ai-prompts";
 let currentEditRealIndex = null;
@@ -341,13 +514,8 @@ let historyVersions = {
     '-8': { data: null, timestamp: null }
 };
 
-/* 快捷键：Ctrl + Enter 打开创建提示词弹窗 */
+/* 快捷键：完整的 Vim 操作 */
 document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.key === 'Enter') {
-        e.preventDefault();
-        openModal();
-    }
-    
     const activeElement = document.activeElement;
     const isInputFocused = activeElement && (
         activeElement.tagName === 'INPUT' || 
@@ -355,32 +523,319 @@ document.addEventListener('keydown', function(e) {
         activeElement.isContentEditable
     );
     
-    if (e.key === 'Escape' && isInputFocused) {
-        e.preventDefault();
-        activeElement.blur();
+    const isCommandLine = activeElement && activeElement.id === 'commandLineInput';
+    
+    if (isCommandLine) {
+        handleCommandLineInput(e);
         return;
     }
     
-    if (!isInputFocused) {
-        if (e.key === '/') {
+    if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        openModal();
+        return;
+    }
+    
+    if (e.key === 'Escape') {
+        if (isInputFocused) {
             e.preventDefault();
-            document.getElementById('searchInput').focus();
-        } else if (e.key === 'j') {
-            e.preventDefault();
-            window.scrollBy(0, 100);
-        } else if (e.key === 'k') {
-            e.preventDefault();
-            window.scrollBy(0, -100);
-        } else if (e.key === 'G') {
-            e.preventDefault();
-            window.scrollTo(0, document.body.scrollHeight);
+            activeElement.blur();
+        } else if (document.getElementById('helpModal').classList.contains('active')) {
+            closeHelpModal();
         }
+        return;
+    }
+    
+    if (isInputFocused) return;
+    
+    const now = Date.now();
+    const isNumber = /^[0-9]$/.test(e.key);
+    
+    if (isNumber) {
+        const timeSinceLastKey = now - vimMode.lastKeyPressTime;
+        if (timeSinceLastKey < 500) {
+            vimMode.numberPrefix += e.key;
+        } else {
+            vimMode.numberPrefix = e.key;
+        }
+        vimMode.lastKeyPressTime = now;
+        
+        setTimeout(() => {
+            if (Date.now() - vimMode.lastKeyPressTime >= 500) {
+                vimMode.numberPrefix = '';
+            }
+        }, 500);
+        return;
+    }
+    
+    const repeatCount = parseInt(vimMode.numberPrefix) || 1;
+    vimMode.numberPrefix = '';
+    
+    if (e.key === 'g' && vimMode.lastKeyPressTime > 0 && (now - vimMode.lastKeyPressTime) < 300) {
+        e.preventDefault();
+        window.scrollTo(0, 0);
+        vimMode.lastKeyPressTime = 0;
+        toast('📍 已跳转到顶部');
+        return;
+    }
+    
+    if (e.key === 'g') {
+        vimMode.lastKeyPressTime = now;
+        setTimeout(() => {
+            if (Date.now() - vimMode.lastKeyPressTime >= 300) {
+                vimMode.lastKeyPressTime = 0;
+            }
+        }, 300);
+        return;
+    }
+    
+    if (e.key === ':') {
+        e.preventDefault();
+        enterCommandLineMode();
+        return;
+    }
+    
+    if (e.key === '/') {
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+        return;
+    }
+    
+    if (e.key === 'j' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        window.scrollBy(0, 100 * repeatCount);
+        return;
+    }
+    
+    if (e.key === 'k' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        window.scrollBy(0, -100 * repeatCount);
+        return;
+    }
+    
+    if (e.key === 'G') {
+        e.preventDefault();
+        window.scrollTo(0, document.body.scrollHeight);
+        toast('📍 已跳转到底部');
+        return;
+    }
+    
+    if (e.ctrlKey && e.key === 'd') {
+        e.preventDefault();
+        window.scrollBy(0, window.innerHeight / 2);
+        return;
+    }
+    
+    if (e.ctrlKey && e.key === 'u') {
+        e.preventDefault();
+        window.scrollBy(0, -window.innerHeight / 2);
+        return;
+    }
+    
+    if (e.ctrlKey && e.key === 'f') {
+        e.preventDefault();
+        window.scrollBy(0, window.innerHeight);
+        return;
+    }
+    
+    if (e.ctrlKey && e.key === 'b') {
+        e.preventDefault();
+        window.scrollBy(0, -window.innerHeight);
+        return;
+    }
+    
+    if (e.key === 'h') {
+        e.preventDefault();
+        window.scrollBy(-100, 0);
+        return;
+    }
+    
+    if (e.key === 'l') {
+        e.preventDefault();
+        window.scrollBy(100, 0);
+        return;
     }
 });
 
 let lastBackupTime = 0;
 let backupTimer = null;
 let initialVersion = null;
+
+/* Vim模式状态 */
+let vimMode = {
+    numberPrefix: '',
+    lastKeyPressTime: 0,
+    commandMode: false,
+    selectedSuggestionIndex: -1
+};
+
+/* 命令定义 */
+const commands = [
+    { cmd: ':w', desc: '导出数据', action: () => exportAll() },
+    { cmd: ':e', desc: '导入数据', action: () => document.getElementById('import-file').click() },
+    { cmd: ':n', desc: '创建新提示词', action: () => openModal() },
+    { cmd: ':d', desc: '删除选中项', action: () => deleteSelected() },
+    { cmd: ':a', desc: '全选', action: () => selectAll() },
+    { cmd: ':A', desc: '取消全选', action: () => selectNone() },
+    { cmd: ':c', desc: '清空搜索', action: () => clearSearch() },
+    { cmd: ':h', desc: '显示帮助', action: () => showHelpModal() },
+    { cmd: ':q', desc: '关闭帮助/退出', action: () => closeHelpModal() },
+    { cmd: ':clear', desc: '清空所有数据', action: () => clearAllData() },
+    { cmd: ':stats', desc: '显示统计信息', action: () => showStats() }
+];
+
+/* 显示帮助弹窗 */
+function showHelpModal() {
+    document.getElementById('helpModal').classList.add('active');
+}
+
+/* 关闭帮助弹窗 */
+function closeHelpModal() {
+    document.getElementById('helpModal').classList.remove('active');
+}
+
+/* 删除选中项 */
+function deleteSelected() {
+    if (selectedIndexes.length === 0) {
+        toast('❌ 请先选择要删除的项目');
+        return;
+    }
+    if (confirm(`确定删除选中的 ${selectedIndexes.length} 个项目？`)) {
+        const list = loadPrompts();
+        const sortedIndexes = [...selectedIndexes].sort((a, b) => b - a);
+        sortedIndexes.forEach(index => list.splice(index, 1));
+        savePrompts(list);
+        selectedIndexes = [];
+        renderList();
+        syncToWorkspaceFile();
+        toast(`✅ 已删除 ${sortedIndexes.length} 个项目`);
+    }
+}
+
+/* 清空搜索 */
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    renderList();
+    toast('✅ 搜索已清空');
+}
+
+/* 清空所有数据 */
+function clearAllData() {
+    if (confirm('确定要清空所有数据吗？此操作不可恢复！')) {
+        savePrompts([]);
+        selectedIndexes = [];
+        renderList();
+        syncToWorkspaceFile();
+        toast('✅ 所有数据已清空');
+    }
+}
+
+/* 显示统计信息 */
+function showStats() {
+    const list = loadPrompts();
+    const total = list.length;
+    const selected = selectedIndexes.length;
+    const tags = [...new Set(list.map(item => item.tag).filter(Boolean))];
+    toast(`📊 总数: ${total} | 选中: ${selected} | 标签数: ${tags.length}`);
+}
+
+/* 进入命令行模式 */
+function enterCommandLineMode() {
+    vimMode.commandMode = true;
+    const container = document.getElementById('commandLineContainer');
+    const input = document.getElementById('commandLineInput');
+    container.classList.add('active');
+    input.value = ':';
+    input.focus();
+    showSuggestions('');
+}
+
+/* 退出命令行模式 */
+function exitCommandLineMode() {
+    vimMode.commandMode = false;
+    document.getElementById('commandLineContainer').classList.remove('active');
+    document.getElementById('commandSuggestions').classList.remove('active');
+    document.getElementById('commandLineInput').value = '';
+    vimMode.selectedSuggestionIndex = -1;
+}
+
+/* 显示命令建议 */
+function showSuggestions(filter) {
+    const suggestions = document.getElementById('commandSuggestions');
+    const filteredCommands = commands.filter(cmd => 
+        cmd.cmd.toLowerCase().includes(filter.toLowerCase()) ||
+        cmd.desc.toLowerCase().includes(filter.toLowerCase())
+    );
+    
+    if (filteredCommands.length === 0) {
+        suggestions.classList.remove('active');
+        return;
+    }
+    
+    suggestions.innerHTML = filteredCommands.map((cmd, index) => 
+        `<div class="command-suggestion ${index === vimMode.selectedSuggestionIndex ? 'selected' : ''}" 
+              onclick="executeCommand('${cmd.cmd}')">
+            <span class="cmd">${cmd.cmd}</span>
+            <span class="desc">${cmd.desc}</span>
+        </div>`
+    ).join('');
+    
+    suggestions.classList.add('active');
+}
+
+/* 执行命令 */
+function executeCommand(cmdStr) {
+    const cmd = commands.find(c => c.cmd.toLowerCase() === cmdStr.toLowerCase());
+    if (cmd) {
+        exitCommandLineMode();
+        cmd.action();
+    } else {
+        toast('❌ 未知命令: ' + cmdStr);
+    }
+}
+
+/* 处理命令行输入 */
+function handleCommandLineInput(e) {
+    const input = e.target;
+    const value = input.value;
+    
+    if (e.key === 'Enter') {
+        if (value.startsWith(':')) {
+            executeCommand(value);
+        }
+        e.preventDefault();
+    } else if (e.key === 'Escape') {
+        exitCommandLineMode();
+    } else if (e.key === 'Tab') {
+        e.preventDefault();
+        const suggestions = document.querySelectorAll('.command-suggestion');
+        if (suggestions.length > 0) {
+            vimMode.selectedSuggestionIndex = (vimMode.selectedSuggestionIndex + 1) % suggestions.length;
+            showSuggestions(value.substring(1));
+        }
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const suggestions = document.querySelectorAll('.command-suggestion');
+        if (suggestions.length > 0) {
+            vimMode.selectedSuggestionIndex = (vimMode.selectedSuggestionIndex + 1) % suggestions.length;
+            showSuggestions(value.substring(1));
+        }
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const suggestions = document.querySelectorAll('.command-suggestion');
+        if (suggestions.length > 0) {
+            vimMode.selectedSuggestionIndex = vimMode.selectedSuggestionIndex <= 0 ? suggestions.length - 1 : vimMode.selectedSuggestionIndex - 1;
+            showSuggestions(value.substring(1));
+        }
+    } else {
+        vimMode.selectedSuggestionIndex = -1;
+        if (value.startsWith(':')) {
+            showSuggestions(value.substring(1));
+        } else {
+            document.getElementById('commandSuggestions').classList.remove('active');
+        }
+    }
+}
 
 
 /* 轻量级提示：1秒自动消失，至少间隔1000ms */
