@@ -70,6 +70,33 @@ nav:false
     white-space: pre-wrap;
     margin-bottom: 0.6rem;
     border: 1px solid #e5e7eb;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    overflow: hidden;
+    position: relative;
+    max-width: 100%;
+}
+.prompt-content::after {
+    content: '...';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: #fff;
+    padding-left: 10px;
+    display: none;
+}
+.prompt-content.truncated::after {
+    display: block;
+}
+.prompt-card:hover .prompt-content {
+    -webkit-line-clamp: 100;
+    max-height: none;
+    overflow-y: auto;
+    max-height: 400px;
+}
+.prompt-card:hover .prompt-content::after {
+    display: none;
 }
 .prompt-tag {
     display: inline-block;
@@ -943,11 +970,29 @@ function renderList() {
             i => i.title === item.title && i.content === item.content && i.time === item.time
         );
 
+        const formatContent = (content) => {
+            if (!content) return '';
+            const lines = content.split('\n');
+            const formattedLines = lines.map(line => {
+                if (line.length <= 100) return line;
+                const chunks = [];
+                for (let i = 0; i < line.length; i += 100) {
+                    chunks.push(line.slice(i, i + 100));
+                }
+                return chunks.join('\n');
+            });
+            return formattedLines.join('\n');
+        };
+
+        const formattedContent = formatContent(item.content);
+        const contentLines = formattedContent.split('\n').length;
+        const isTruncated = contentLines > 5;
+
         html += `
         <div class="prompt-card ${selectedIndexes.includes(realIndex) ? 'selected' : ''}" onclick="toggleSelect(${realIndex})" data-real-index="${realIndex}">
             <div class="prompt-title">${item.title || "无标题"}</div>
             ${item.tag ? `<span class="prompt-tag">${item.tag}</span>` : ""}
-            <div class="prompt-content">${item.content}</div>
+            <div class="prompt-content ${isTruncated ? 'truncated' : ''}">${formattedContent}</div>
             <div class="prompt-actions">
                 <div class="prompt-left-btns">
                     <button class="prompt-btn btn-copy" onclick="copyPrompt(${realIndex})">📋 复制</button>
