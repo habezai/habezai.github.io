@@ -6,7 +6,7 @@ nav:false
 # AI 提示词管理器 | 本地存储
 
 <style>
-.prompt-container { margin: 2rem 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+.prompt-container { margin: 2rem 0; display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
 
 /* 左侧内容区域 */
 .left-content { display: flex; flex-direction: column; }
@@ -60,8 +60,33 @@ nav:false
     border-radius: 10px;
     padding: 1rem;
     margin-bottom: 1rem;
+    position: relative;
 }
-.prompt-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 0.5rem; }
+.prompt-view-btn {
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    margin-left: 10px;
+}
+.prompt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+.prompt-title { 
+    font-size: 1.1rem; 
+    font-weight: bold; 
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .prompt-content {
     background: #fff;
     padding: 0.8rem;
@@ -76,6 +101,8 @@ nav:false
     overflow: hidden;
     position: relative;
     max-width: 100%;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 .prompt-content::after {
     content: '...';
@@ -89,15 +116,7 @@ nav:false
 .prompt-content.truncated::after {
     display: block;
 }
-.prompt-card:hover .prompt-content {
-    -webkit-line-clamp: 100;
-    max-height: none;
-    overflow-y: auto;
-    max-height: 400px;
-}
-.prompt-card:hover .prompt-content::after {
-    display: none;
-}
+
 .prompt-tag {
     display: inline-block;
     background: #dbeafe;
@@ -378,6 +397,59 @@ nav:false
 .help-close:hover {
     background: #ff5252;
 }
+/* 浏览弹窗样式 */
+.view-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 95%;
+    max-width: 1200px;
+    max-height: 90vh;
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    z-index: 10003;
+    display: none;
+    overflow-y: auto;
+}
+.view-modal.active {
+    display: block;
+}
+.view-modal h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #1f2937;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+}
+.view-modal-content {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 1.5rem;
+    font-family: monospace;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    max-height: 60vh;
+    overflow-y: auto;
+    line-height: 1.6;
+}
+.view-modal-close {
+    background: #64748b;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+.view-modal-close:hover {
+    background: #475569;
+}
 </style>
 
 <div class="prompt-container">
@@ -525,6 +597,14 @@ nav:false
         <div class="help-item"><span class="key">5k</span><span class="desc">向上滚动5次</span></div>
     </div>
     <button class="help-close" onclick="closeHelpModal()">关闭</button>
+</div>
+
+<!-- 浏览弹窗 -->
+<div class="view-modal" id="viewModal">
+    <h3 id="viewModalTitle">📖 浏览提示词</h3>
+    <div id="viewModalTag" style="margin-bottom: 1rem;"></div>
+    <div class="view-modal-content" id="viewModalContent"></div>
+    <button class="view-modal-close" onclick="closeViewModal()">关闭</button>
 </div>
 
 <script>
@@ -959,7 +1039,7 @@ function renderList() {
     }).reverse();
 
     if (filteredList.length === 0) {
-        container.innerHTML = `<div class="empty-tip">暂无提示词，开始创建吧～</div>`;
+        container.innerHTML = `<div class="empty-tip">暂无提示词，开始创建or导入吧～</div>`;
         return;
     }
 
@@ -970,29 +1050,14 @@ function renderList() {
             i => i.title === item.title && i.content === item.content && i.time === item.time
         );
 
-        const formatContent = (content) => {
-            if (!content) return '';
-            const lines = content.split('\n');
-            const formattedLines = lines.map(line => {
-                if (line.length <= 100) return line;
-                const chunks = [];
-                for (let i = 0; i < line.length; i += 100) {
-                    chunks.push(line.slice(i, i + 100));
-                }
-                return chunks.join('\n');
-            });
-            return formattedLines.join('\n');
-        };
-
-        const formattedContent = formatContent(item.content);
-        const contentLines = formattedContent.split('\n').length;
-        const isTruncated = contentLines > 5;
-
         html += `
         <div class="prompt-card ${selectedIndexes.includes(realIndex) ? 'selected' : ''}" onclick="toggleSelect(${realIndex})" data-real-index="${realIndex}">
-            <div class="prompt-title">${item.title || "无标题"}</div>
+            <div class="prompt-header">
+                <div class="prompt-title">${item.title || "无标题"}</div>
+                <button class="prompt-view-btn" onclick="event.stopPropagation(); viewPrompt(${realIndex})">👁️</button>
+            </div>
             ${item.tag ? `<span class="prompt-tag">${item.tag}</span>` : ""}
-            <div class="prompt-content ${isTruncated ? 'truncated' : ''}">${formattedContent}</div>
+            <div class="prompt-content">${item.content}</div>
             <div class="prompt-actions">
                 <div class="prompt-left-btns">
                     <button class="prompt-btn btn-copy" onclick="copyPrompt(${realIndex})">📋 复制</button>
@@ -1033,6 +1098,25 @@ function editPrompt(realIndex) {
 /* 关闭弹窗 */
 function closeModal() {
     document.getElementById("modal").style.display = "none";
+    document.getElementById("modalOverlay").style.display = "none";
+}
+
+/* 浏览提示词 */
+function viewPrompt(realIndex) {
+    const list = loadPrompts();
+    const item = list[realIndex];
+    
+    document.getElementById("viewModalTitle").innerText = `📖 ${item.title || "无标题"}`;
+    document.getElementById("viewModalTag").innerHTML = item.tag ? `<span class="prompt-tag">${item.tag}</span>` : "";
+    document.getElementById("viewModalContent").innerText = item.content || "";
+    
+    document.getElementById("viewModal").classList.add("active");
+    document.getElementById("modalOverlay").style.display = "block";
+}
+
+/* 关闭浏览弹窗 */
+function closeViewModal() {
+    document.getElementById("viewModal").classList.remove("active");
     document.getElementById("modalOverlay").style.display = "none";
 }
 
@@ -1460,6 +1544,12 @@ async function restoreToVersion(versionOffset) {
     }
 }
 
+/* 点击遮罩层关闭浏览弹窗 */
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeViewModal();
+    }
+});
 
 window.onload = renderList;
 </script>
