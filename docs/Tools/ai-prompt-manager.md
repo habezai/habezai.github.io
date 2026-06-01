@@ -567,27 +567,18 @@ nav:false
         <div class="help-item"><span class="key">k</span><span class="desc">向上滚动</span></div>
         <div class="help-item"><span class="key">gg</span><span class="desc">跳转到页面顶部</span></div>
         <div class="help-item"><span class="key">G</span><span class="desc">跳转到页面底部</span></div>
-        <div class="help-item"><span class="key">Ctrl + d</span><span class="desc">向下翻半页</span></div>
-        <div class="help-item"><span class="key">Ctrl + u</span><span class="desc">向上翻半页</span></div>
-        <div class="help-item"><span class="key">Ctrl + f</span><span class="desc">向下翻一页</span></div>
-        <div class="help-item"><span class="key">Ctrl + b</span><span class="desc">向上翻一页</span></div>
     </div>
     <div class="help-section">
         <h4>🔍 搜索与操作</h4>
         <div class="help-item"><span class="key">/</span><span class="desc">聚焦搜索框</span></div>
         <div class="help-item"><span class="key">:</span><span class="desc">进入命令行模式</span></div>
         <div class="help-item"><span class="key">Esc</span><span class="desc">退出输入/命令模式</span></div>
-        <div class="help-item"><span class="key">Ctrl + Enter</span><span class="desc">创建新提示词</span></div>
+        <div class="help-item"><span class="key">o</span><span class="desc">创建新提示词</span></div>
     </div>
     <div class="help-section">
         <h4>💻 命令行命令</h4>
         <div class="help-item"><span class="key">:w</span><span class="desc">导出数据</span></div>
         <div class="help-item"><span class="key">:e</span><span class="desc">导入数据</span></div>
-        <div class="help-item"><span class="key">:n</span><span class="desc">创建新提示词</span></div>
-        <div class="help-item"><span class="key">:d</span><span class="desc">删除选中项</span></div>
-        <div class="help-item"><span class="key">:a</span><span class="desc">全选</span></div>
-        <div class="help-item"><span class="key">:A</span><span class="desc">取消全选</span></div>
-        <div class="help-item"><span class="key">:c</span><span class="desc">清空搜索</span></div>
         <div class="help-item"><span class="key">:h</span><span class="desc">显示帮助</span></div>
         <div class="help-item"><span class="key">:q</span><span class="desc">关闭帮助/退出</span></div>
     </div>
@@ -637,7 +628,7 @@ document.addEventListener('keydown', function(e) {
         return;
     }
     
-    if (e.ctrlKey && e.key === 'Enter') {
+    if (e.key === 'o') {
         e.preventDefault();
         openModal();
         return;
@@ -649,6 +640,12 @@ document.addEventListener('keydown', function(e) {
             activeElement.blur();
         } else if (document.getElementById('helpModal').classList.contains('active')) {
             closeHelpModal();
+        } else if (document.getElementById('modal').style.display === 'block') {
+            closeModal();
+        } else if (document.getElementById('importTextModal').style.display === 'block') {
+            closeImportTextModal();
+        } else if (document.getElementById('viewModal').classList.contains('active')) {
+            closeViewModal();
         }
         return;
     }
@@ -727,30 +724,6 @@ document.addEventListener('keydown', function(e) {
         return;
     }
     
-    if (e.ctrlKey && e.key === 'd') {
-        e.preventDefault();
-        window.scrollBy(0, window.innerHeight / 2);
-        return;
-    }
-    
-    if (e.ctrlKey && e.key === 'u') {
-        e.preventDefault();
-        window.scrollBy(0, -window.innerHeight / 2);
-        return;
-    }
-    
-    if (e.ctrlKey && e.key === 'f') {
-        e.preventDefault();
-        window.scrollBy(0, window.innerHeight);
-        return;
-    }
-    
-    if (e.ctrlKey && e.key === 'b') {
-        e.preventDefault();
-        window.scrollBy(0, -window.innerHeight);
-        return;
-    }
-    
     if (e.key === 'h') {
         e.preventDefault();
         window.scrollBy(-100, 0);
@@ -780,15 +753,10 @@ let vimMode = {
 const commands = [
     { cmd: ':w', desc: '导出数据', action: () => exportAll() },
     { cmd: ':e', desc: '导入数据', action: () => document.getElementById('import-file').click() },
-    { cmd: ':n', desc: '创建新提示词', action: () => openModal() },
-    { cmd: ':d', desc: '删除选中项', action: () => deleteSelected() },
-    { cmd: ':a', desc: '全选', action: () => selectAll() },
-    { cmd: ':A', desc: '取消全选', action: () => selectNone() },
-    { cmd: ':c', desc: '清空搜索', action: () => clearSearch() },
     { cmd: ':h', desc: '显示帮助', action: () => showHelpModal() },
     { cmd: ':q', desc: '关闭帮助/退出', action: () => closeHelpModal() },
-    { cmd: ':clear', desc: '清空所有数据', action: () => clearAllData() },
-    { cmd: ':stats', desc: '显示统计信息', action: () => showStats() }
+    { cmd: ':stats', desc: '显示统计信息', action: () => showStats() },
+    { cmd: ':clearAllData', desc: '清空所有数据', action: () => clearAllData() }
 ];
 
 /* 显示帮助弹窗 */
@@ -817,13 +785,6 @@ function deleteSelected() {
         syncToWorkspaceFile();
         toast(`✅ 已删除 ${sortedIndexes.length} 个项目`);
     }
-}
-
-/* 清空搜索 */
-function clearSearch() {
-    document.getElementById('searchInput').value = '';
-    renderList();
-    toast('✅ 搜索已清空');
 }
 
 /* 清空所有数据 */
