@@ -478,7 +478,7 @@ nav:false
             <h3>📱 功能菜单 </h3>
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.2rem;">
                 <button class="create-btn" onclick="selectWorkspaceFile()" style="background:#f59e0b; margin-bottom:0;">📂 关联本地工作区(.json file)</button>
-                <div id="workspaceTip" style="font-size:14px; color:#666;"></div>
+                <div id="workspaceTip" style="font-size:14px; color:#666;"></div> <div id="lastWorkspaceHint" style="font-size:12px; color:#888;display:none; margin-top:4px;"></div>
             </div>
             <button class="create-btn" onclick="exportAll()" style="background:#0891b2;">💾 导出全体数据(.json file)</button>
             <button class="create-btn" onclick="document.getElementById('import-file').click()" style="background:#8b5cf6;">📥 导入数据(.json file)</button>
@@ -602,8 +602,10 @@ nav:false
 const STORAGE_KEY = "jtd-ai-prompts";
 let currentEditRealIndex = null;
 let selectedIndexes = []; /* 批量选择ID集合 */
-let workspaceFileHandle = null; /* 本地文件句柄（核心）*/
-let workspaceFileName = null;  /* 保存的文件名*/
+let workspaceFileHandle = null; /* 本地文件句柄 */
+let workspaceFileName = null;  /* 保存的文件名 */
+const LAST_WORKSPACE_KEY = "jtd-ai-prompts-last-workspace";
+
 let lastToastTime = 0;  /* 上次toast调用时间 */
 let historyVersions = {
     '-2': { data: null, timestamp: null },
@@ -1336,7 +1338,11 @@ async function selectWorkspaceFile() {
         workspaceFileHandle = handle;
         workspaceFileName = handle.name;
         document.getElementById('workspaceTip').innerText = `✅ 已关联工作区：${workspaceFileName}`;
+        document.getElementById('lastWorkspaceHint').style.display = 'none';
         toast('✅ 本地工作区关联成功！\n后续操作将自动双向同步');
+
+        /* 保存文件名到 localStorage */
+        localStorage.setItem(LAST_WORKSPACE_KEY, workspaceFileName);
 
         await loadFromWorkspaceFile();
         
@@ -1512,5 +1518,27 @@ document.getElementById('modalOverlay').addEventListener('click', function(e) {
     }
 });
 
-window.onload = renderList;
+window.onload = function() {
+    renderList();
+    showLastWorkspaceHint();
+};
+
+/* 显示上次工作区提示 */
+function showLastWorkspaceHint() {
+    const lastFileName = localStorage.getItem(LAST_WORKSPACE_KEY);
+    if (lastFileName && !workspaceFileHandle) {
+        const hint = document.getElementById('lastWorkspaceHint');
+        hint.innerHTML = `📋 上次工作区：<span style="color:#f59e0b; cursor:pointer; text-decoration:underline;" onclick="copyLastWorkspace()">${lastFileName}</span>`;
+        hint.style.display = 'block';
+    }
+}
+
+/* 复制上次工作区文件名 */
+function copyLastWorkspace() {
+    const lastFileName = localStorage.getItem(LAST_WORKSPACE_KEY);
+    if (lastFileName) {
+        navigator.clipboard.writeText(lastFileName);
+        toast('✅ 已复制到剪贴板');
+    }
+}
 </script>
