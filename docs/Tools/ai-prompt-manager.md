@@ -630,12 +630,6 @@ document.addEventListener('keydown', function(e) {
         return;
     }
     
-    if (e.key === 'o') {
-        e.preventDefault();
-        openModal();
-        return;
-    }
-    
     if (e.key === 'Escape') {
         if (isInputFocused) {
             e.preventDefault();
@@ -653,6 +647,12 @@ document.addEventListener('keydown', function(e) {
     }
     
     if (isInputFocused) return;
+
+    if (e.key === 'o') {
+        e.preventDefault();
+        openModal();
+        return;
+    }
     
     const now = Date.now();
     const isNumber = /^[0-9]$/.test(e.key);
