@@ -1,0 +1,20 @@
+<!-- 安全随机数 -->
+<div id="random" class="tab-content">
+    <div class="section">
+        <div class="title">安全随机数 / 密钥生成</div>
+        <div class="label">生成随机数长度（单位：字节）</div>
+        <input type="number" id="randLen" value="32" spellcheck="false" autocorrect="off" autocapitalize="off">
+        <div class="label">输出编码格式</div>
+        <select id="randFormat">
+            <option value="hex">HEX 编码</option>
+            <option value="base64">Base64 编码</option>
+        </select>
+        <button class="btn" onclick="doRand()">生成随机数</button>
+        <div class="result" id="randResult"></div>
+    </div>
+</div>
+
+<script>
+/* 安全随机数生成 */
+function doRand(){try{const l=parseInt(document.getElementById('randLen').value);if(l<1||l>1024)throw new Error("长度 1~1024");const b=crypto.getRandomValues(new Uint8Array(l));const f=document.getElementById('randFormat').value;const o=f==='hex'?Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join(''):btoa(String.fromCharCode(...b));document.getElementById('randResult').innerText=o;}catch(e){document.getElementById('randResult').innerText="❌ 失败："+e.message;}}
+</script>

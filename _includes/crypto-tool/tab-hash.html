@@ -1,0 +1,58 @@
+<!-- 哈希模块 -->
+<div id="hash" class="tab-content active">
+    <div class="section">
+        <div class="title">哈希算法</div>
+
+        <div class="row">
+            <div class="col" style="max-width:140px;">
+                <div class="label">输入模式</div>
+                <select id="hashInputMode">
+                    <option value="hex">HEX 模式</option>
+                    <option value="utf8">UTF-8 文本模式</option>
+                    <option value="base64">Base64 模式</option>
+                    <option value="file">二进制文件模式</option>
+                </select>
+            </div>
+            <div class="col">
+                <div id="hashInputArea" style="display: block;">
+                    <div class="label">输入内容</div>
+                    <textarea id="hashInput" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+                    <div class="error-hint" id="hashErrorHint"></div>
+                </div>
+                <div id="hashFileArea" style="display: none;">
+                    <div class="label">选择文件</div>
+                    <input type="file" id="hashFileInput" class="file-input" />
+                    <div class="file-hint">读取原始二进制</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="margin-top:8px;">
+            <div class="col"><select id="hashAlgo"></select></div>
+        </div>
+
+        <button class="btn" onclick="doHash()">计算哈希</button>
+        <div class="result" id="hashResult"></div>
+    </div>
+</div>
+
+<script>
+/* 哈希计算 */
+async function doHash() {
+    const res = document.getElementById('hashResult'); res.innerText = "⏳ 计算中...";
+    try {
+        const mode = document.getElementById('hashInputMode').value;
+        const algo = document.getElementById('hashAlgo').value;
+        let data, text = "";
+
+        if (mode === 'hex') { if (!validateHash()) throw new Error("HEX 输入无效"); text = document.getElementById('hashInput').value.trim(); data = text ? hexToBytes(text) : new Uint8Array(); }
+        else if (mode === 'utf8') { text = document.getElementById('hashInput').value.trim(); data = new TextEncoder().encode(text); }
+        else if (mode === 'base64') { if (!validateHash()) throw new Error("Base64 输入无效"); text = document.getElementById('hashInput').value.trim(); data = text ? base64ToBytes(text) : new Uint8Array(); }
+        else if (mode === 'file') { const f = document.getElementById('hashFileInput').files[0]; if (!f) throw new Error("请选择文件"); data = await readFileAsUint8Array(f); }
+
+        if (mode !== 'file') inputHistory.add(text);
+        let out = algo.startsWith('sha3-') ? await hw.sha3(data, parseInt(algo.split('-')[1])) : await hw[algo](data);
+        res.innerText = out.toUpperCase();
+    } catch (e) { res.innerText = "❌ 错误：" + e.message; }
+}
+</script>

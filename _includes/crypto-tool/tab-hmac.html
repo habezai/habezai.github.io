@@ -1,0 +1,131 @@
+<!-- HMAC 模块 -->
+<div id="hmac" class="tab-content">
+    <div class="section">
+        <div class="title">HMAC 消息认证码</div>
+
+        <!-- 消息：模式 + 内容 同一行 -->
+        <div class="row">
+            <div class="col" style="max-width:140px;">
+                <div class="label">消息输入模式</div>
+                <select id="hmacInputMode">
+                    <option value="hex">HEX 模式</option>
+                    <option value="utf8">UTF-8 文本模式</option>
+                    <option value="base64">Base64 模式</option>
+                    <option value="file">二进制文件模式</option>
+                </select>
+            </div>
+            <div class="col">
+                <div id="hmacMsgArea" style="display: block;">
+                    <div class="label">消息内容</div>
+                    <textarea id="hmacMsg" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+                    <div class="error-hint" id="hmacErrorHint"></div>
+                </div>
+                <div id="hmacFileArea" style="display: none;">
+                    <div class="label">选择文件</div>
+                    <input type="file" id="hmacFileInput" class="file-input" />
+                    <div class="file-hint">读取原始二进制</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 密钥：模式 + 密钥 同一行 -->
+        <div class="row" style="margin-top:8px;">
+            <div class="col" style="max-width:140px;">
+                <div class="label">密钥输入模式</div>
+                <select id="hmacKeyMode">
+                    <option value="hex">HEX 模式</option>
+                    <option value="utf8">UTF-8 文本模式</option>
+                    <option value="base64">Base64 模式</option>
+                </select>
+            </div>
+            <div class="col">
+                <div class="label">密钥</div>
+                <input id="hmacKey" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" />
+                <div class="error-hint" id="hmacKeyErrorHint"></div>
+            </div>
+        </div>
+
+        <div class="label" style="margin-top:8px;">哈希算法</div>
+        <select id="hmacAlgo"></select>
+
+        <button class="btn" style="margin-top:8px;" onclick="doHmac()">计算 HMAC</button>
+        <div class="result" id="hmacResult"></div>
+    </div>
+</div>
+
+<script>
+/* HMAC */
+async function doHmac() {
+    const res = document.getElementById('hmacResult'); 
+    res.innerText = "⏳ 计算中...";
+    try {
+        const msgMode = document.getElementById('hmacInputMode').value;
+        const keyMode = document.getElementById('hmacKeyMode').value;
+        const algo = document.getElementById('hmacAlgo').value;
+        const msgVal = document.getElementById('hmacMsg').value.trim();
+        const keyVal = document.getElementById('hmacKey').value.trim();
+
+        if (!validateHmacMsg()) throw new Error("消息格式无效");
+        if (!validateHmacKey()) throw new Error("密钥格式无效");
+        if (!keyVal) throw new Error("密钥不能为空");
+
+        /* 消息转二进制（支持文件） */
+        let msg;
+        if (msgMode === 'hex') {
+            msg = msgVal ? hexToBytes(msgVal) : new Uint8Array();
+        } else if (msgMode === 'utf8') {
+            msg = new TextEncoder().encode(msgVal);
+        } else if (msgMode === 'base64') {
+            msg = msgVal ? base64ToBytes(msgVal) : new Uint8Array();
+        } else if (msgMode === 'file') {
+            const f = document.getElementById('hmacFileInput').files[0];
+            if (!f) throw new Error("请选择文件");
+            msg = await readFileAsUint8Array(f);
+        }
+
+        /* 密钥转二进制 */
+        let key;
+        if (keyMode === 'hex') {
+            key = hexToBytes(keyVal);
+        } else if (keyMode === 'utf8') {
+            key = new TextEncoder().encode(keyVal);
+        } else {
+            key = base64ToBytes(keyVal);
+        }
+
+        /* 历史记录 */
+        if(msgMode !== 'file') hmacMsgHistory.add(msgVal);
+        hmacKeyHistory.add(keyVal);
+
+        /* ============================================== */
+        /* 官方标准调用方式：createHMAC(创建的哈希实例, key) */
+        /* ============================================== */
+        let hashCreator;
+        switch (algo) {
+            case 'md5': hashCreator = hw.createMD5(); break;
+            case 'sha1': hashCreator = hw.createSHA1(); break;
+            case 'sha224': hashCreator = hw.createSHA224(); break;
+            case 'sha256': hashCreator = hw.createSHA256(); break;
+            case 'sha384': hashCreator = hw.createSHA384(); break;
+            case 'sha512': hashCreator = hw.createSHA512(); break;
+            case 'sha3-224': hashCreator = hw.createSHA3_224(); break;
+            case 'sha3-256': hashCreator = hw.createSHA3_256(); break;
+            case 'sha3-384': hashCreator = hw.createSHA3_384(); break;
+            case 'sha3-512': hashCreator = hw.createSHA3_512(); break;
+            case 'md4': hashCreator = hw.createMD4(); break;
+            case 'ripemd160': hashCreator = hw.createRIPEMD160(); break;
+            case 'sm3': hashCreator = hw.createSM3(); break;
+            case 'whirlpool': hashCreator = hw.createWhirlpool(); break;
+            default: throw new Error("不支持的哈希算法");
+        }
+
+        const hmac = await hw.createHMAC(hashCreator, key);
+        await hmac.update(msg);
+        const resultHexStr = await hmac.digest();
+        res.innerText = resultHexStr.toUpperCase();
+    } catch (e) { 
+        console.error("HMAC error:", e);
+        res.innerText = "❌ 错误：" + e.message; 
+    }
+}
+</script>

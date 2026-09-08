@@ -1,0 +1,167 @@
+此文件诞生自用户提示词：
+"""
+很好,你把现在的新架构的这些要点做成一个总结txt存入D:\yufeng.huang\_DoNotRemove\habezai.github.io\docs\Tools\readme.txt。
+目的是对此架构做一个介绍和开发人员的指导说明。
+"""
+
+================================================================================
+  密码学工具箱 (crypto-tool) - 架构说明与开发指导
+================================================================================
+
+一、背景
+──────────────────────────────────────────────────────────────────────────────
+crypto-tool.md 原本是一个约 926 行的单体 Markdown 文件，内含 CSS、HTML 和
+JavaScript 全部耦合在一起，维护和扩展困难。
+
+现已重构为基于 Jekyll {% include %} 机制的「Feature Module」渐进式增量架构，
+将单体文件拆分为 9 个独立模块，每个模块自包含 HTML 结构与 JavaScript 逻辑。
+
+
+二、文件结构
+──────────────────────────────────────────────────────────────────────────────
+docs/Tools/
+  crypto-tool.md                  ← 主入口 (仅 36 行，只做组装，不含业务逻辑)
+
+_includes/crypto-tool/
+  styles.html                     ← 共享 CSS 样式
+  scripts-lib.html                ← 外部 CDN 脚本引用 (hash-wasm, forge, aes-js)
+  scripts-core.html               ← 核心基础设施
+                                      - 工具函数 (hexToBytes, base64ToBytes, ...)
+                                      - 输入历史管理 (上下键记忆)
+                                      - 输入格式校验 (validateHash, ...)
+                                      - 页面初始化 (window.onload)
+                                      - Tab 切换逻辑 (showTab)
+  tab-hash.html                   ← 哈希模块 (HTML + doHash)
+  tab-hmac.html                   ← HMAC 模块 (HTML + doHmac)
+  tab-aes.html                    ← AES-XTS 模块 (HTML + AES_XTS_NATIVE 类 + 加解密)
+  tab-rsa.html                    ← RSA 模块 (HTML + 生成密钥/加解密)
+  tab-random.html                 ← 随机数模块 (HTML + doRand)
+  tab-encode.html                 ← 编码转换模块 (HTML + doEnc + 下载Bin)
+
+
+三、分层架构
+──────────────────────────────────────────────────────────────────────────────
+
+  ┌─────────────────────────────────────────────────────┐
+  │  组装层: crypto-tool.md                              │
+  │  frontmatter + {% include %} 指令                    │
+  ├─────────────────────────────────────────────────────┤
+  │  基础设施层: styles.html + scripts-lib.html          │
+  │             + scripts-core.html                     │
+  │  全局共享的 CSS、CDN 依赖、工具函数、初始化逻辑      │
+  ├──────────┬──────────┬──────────┬────────────────────┤
+  │ tab-hash │ tab-hmac │ tab-aes  │ tab-rsa            │
+  │ tab-random │ tab-encode │ ...  │ (未来可扩展)       │
+  │                                                      │
+  │  功能模块层: 每个 tab-*.html 自包含                   │
+  │  HTML 结构 + 专属 JavaScript 逻辑                    │
+  └─────────────────────────────────────────────────────┘
+
+
+四、模块间依赖关系
+──────────────────────────────────────────────────────────────────────────────
+scripts-lib.html  (CDN 脚本)
+       │
+       ▼
+scripts-core.html (工具函数、校验、历史、初始化)
+       │
+       ├──▶ tab-hash.html    (使用 hw, inputHistory, validateHash)
+       ├──▶ tab-hmac.html    (使用 hw, hmacMsgHistory, hmacKeyHistory, validateHmac*)
+       ├──▶ tab-aes.html     (使用 hexToBytes, base64ToBytes, aesjs, validateSym)
+       ├──▶ tab-rsa.html     (使用 forge)
+       ├──▶ tab-random.html  (使用 crypto.getRandomValues)
+       └──▶ tab-encode.html  (使用 hexToBytes, base64ToBytes, encHistory, validateEnc)
+
+注意：各 tab-*.html 之间互不依赖，可独立增删。
+
+
+五、渐进式增量开发流程 (如何新增一个功能模块)
+──────────────────────────────────────────────────────────────────────────────
+假设要新增「SM2 国密」功能，只需以下 4 步：
+
+  步骤 1: 创建模块文件
+    在 _includes/crypto-tool/ 下新建 tab-sm2.html，包含：
+      a) 该模块的 HTML 结构 (一个 <div id="sm2" class="tab-content">...</div>)
+      b) 该模块的 JavaScript 逻辑 (放在 <script>...</script> 中)
+
+  步骤 2: 注册 Tab 标签
+    在 crypto-tool.md 的 <div class="tabbar"> 中添加一行：
+      <div class="tab" onclick="showTab('sm2')">SM2</div>
+
+  步骤 3: 引入模块
+    在 crypto-tool.md 的 </div> 之前添加一行：
+      {% include crypto-tool/tab-sm2.html %}
+
+  步骤 4: 注册 Tab 映射
+    在 scripts-core.html 的 showTab() 函数中，给 tabMap 对象添加：
+      sm2: 'SM2'
+
+  完成！无需修改任何其他模块文件。
+
+
+六、主入口文件范例 (crypto-tool.md)
+──────────────────────────────────────────────────────────────────────────────
+---
+title: 密码学工具箱
+nav:false
+---
+
+# 密码工具箱
+
+{% include crypto-tool/styles.html %}
+
+<div class="crypto-tool">
+<div class="tabbar">
+    <div class="tab active" onclick="showTab('hash')">哈希</div>
+    <div class="tab" onclick="showTab('hmac')">HMAC</div>
+    ...更多 Tab...
+</div>
+
+{% include crypto-tool/tab-hash.html %}
+{% include crypto-tool/tab-hmac.html %}
+...更多模块...
+
+</div>
+
+{% include crypto-tool/scripts-lib.html %}
+{% include crypto-tool/scripts-core.html %}
+
+
+七、开发注意事项
+──────────────────────────────────────────────────────────────────────────────
+1. 全局变量
+   - hw (hash-wasm 实例) 由 scripts-core.html 初始化
+   - 各模块通过全局作用域访问 hw, hexToBytes, base64ToBytes 等工具函数
+   - 模块专属状态变量 (如 symBinaryResult, encodeBinaryResult) 在各自
+     模块的 <script> 中用 let 声明，同样位于全局作用域
+
+2. 脚本加载顺序
+   - scripts-lib.html 必须先于 scripts-core.html 加载 (CDN 库)
+   - scripts-core.html 必须先于各 tab 模块加载 (工具函数和初始化)
+   - 当前 crypto-tool.md 中的 include 顺序已保证正确
+
+3. 新增模块时可复用的基础设施
+   - hexToBytes / bytesToHex        : HEX 编解码
+   - base64ToBytes / bytesToBase64  : Base64 编解码
+   - bytesToBase64Url               : Base64Url 编码
+   - bytesToUtf8                    : UTF-8 解码
+   - readFileAsUint8Array           : 读取文件为二进制
+   - isValidBase64                  : Base64 格式校验
+   - hw (hash-wasm)                 : 哈希计算 (MD5, SHA1/2/3, SM3, ...)
+   - forge (node-forge)             : RSA 密钥生成/加解密
+   - aesjs (aes-js)                 : AES 底层运算
+
+4. 不要修改 crypto-tool.md 的 frontmatter (title, nav) 除非必要
+5. 保持 CSS class 命名一致 (.section, .title, .label, .btn, .result 等)
+6. 每个模块的 <div> 必须有 id 属性，且与 showTab() 的 tabMap 中的 key 一致
+
+
+八、技术栈
+──────────────────────────────────────────────────────────────────────────────
+- 静态站点生成器: Jekyll + just-the-docs 主题
+- 模板机制: Jekyll {% include %} (文件位于 _includes/ 目录)
+- 加密库:
+  - hash-wasm 4.12.0   (哈希/HMAC 计算)
+  - node-forge 1.3.1   (RSA 非对称加密)
+  - aes-js 3.1.2       (AES 对称加密)
+- 浏览器原生 API: crypto.getRandomValues (安全随机数), FileReader, TextEncoder/Decoder

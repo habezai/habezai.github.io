@@ -1,0 +1,59 @@
+<style>
+.crypto-tool { margin: 2rem 0; }
+.section { margin: 16px 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #fefefe; }
+.title { font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #222; }
+.label { font-size: 14px; margin: 4px 0; white-space: nowrap; }
+textarea, input, select {
+    width: 100%; box-sizing: border-box; padding: 8px; margin: 4px 0;
+    border: 1px solid #ccc; border-radius: 6px; font-size: 14px;
+}
+textarea { min-height: 100px; resize: vertical; }
+.btn {
+    padding: 8px 16px; background: #007bff; color: white;
+    border: none; border-radius: 6px; cursor: pointer; margin: 4px;
+}
+.btn-danger { background: #dc3544; }
+.btn-success { background: #28a745; }
+.btn-group { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.result {
+    background-color: #f6f8fa; padding: 12px; border-radius: 6px;
+    font-family: Consolas, monospace; white-space: pre-wrap; word-break: break-all;
+    min-height: 60px; margin-top: 10px;
+}
+.tabbar {
+    display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.tab {
+    padding: 8px 14px; background: #f1f1f1; border: 1px solid #ccc;
+    border-radius: 6px 6px 0 0; cursor: pointer;
+}
+.tab.active {
+    background: #007bff; color: white; border-color: #007bff;
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; align-items: center; }
+.col { flex: 1; min-width: 120px; }
+
+.input-error {
+    border: 2px solid #ff4444 !important;
+    background-color: #fff5f5 !important;
+}
+.error-hint {
+    font-size: 12px;
+    color: #ff4444;
+    margin: 4px 0;
+    display: none;
+}
+
+.file-input {
+    padding: 6px;
+    border: 1px dashed #888;
+    background-color: #fafafa;
+}
+.file-hint {
+    font-size: 12px;
+    color: #666;
+    margin: 4px 0;
+}
+</style>

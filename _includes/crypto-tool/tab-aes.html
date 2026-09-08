@@ -1,0 +1,197 @@
+<!-- AES 对称加密 -->
+<div id="aes" class="tab-content">
+    <div class="section">
+        <div class="title">AES-128-XTS 加密解密</div>
+
+        <div class="row">
+            <div class="col" style="max-width:180px;">
+                <div class="label">算法</div>
+                <select id="symAlgo">
+                    <option>aes-128-xts</option>
+                </select>
+            </div>
+
+            <div class="col" style="max-width:160px;">
+                <div class="label">输入模式</div>
+                <select id="symInputMode">
+                    <option value="hex">HEX 模式</option> <!-- 默认改为 HEX -->
+                    <option value="utf8">UTF-8 文本模式</option>
+                    <option value="base64">Base64 模式</option>
+                    <option value="file">二进制文件模式</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 输入区域：文本/文件切换 -->
+        <div id="symInputArea" style="display: block;">
+            <div class="label">输入数据 (HEX/文本/Base64)</div>
+            <textarea id="symInput" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">1dd27696c9c501945533f8990c245f74b0c13faf25b349a627d808f46ac77efe</textarea>
+            <div class="error-hint" id="symErrorHint"></div>
+        </div>
+        <div id="symFileArea" style="display: none;"> <!-- 文件区域 -->
+            <div class="label">选择二进制文件</div>
+            <input type="file" id="symFileInput" class="file-input" />
+            <div class="file-hint">读取原始二进制数据</div>
+        </div>
+
+        <div class="label">密钥 (HEX) → 必须 64 位</div>
+        <input id="symKey" spellcheck="false" autocorrect="off" autocapitalize="off" value="b4ea849b02a0cd5b6d32c5c0cbd059a2bfd517ca8f09cbdb90f23b4537e0dc9c">
+        <div class="error-hint" id="symKeyError"></div>
+
+        <div class="label">Tweak (HEX) → 必须 32 位</div>
+        <input id="symIv" spellcheck="false" autocorrect="off" autocapitalize="off" value="4cbc59b0824f5f6913f50d1155860818">
+        <div class="error-hint" id="symIvError"></div>
+
+        <div class="btn-group">
+            <button class="btn btn-success" onclick="doSymEnc()">加密</button>
+            <button class="btn btn-danger" onclick="doSymDec()">解密</button>
+            <button class="btn" onclick="downloadSymBin('symResult.bin')">下载输出结果Bin</button>
+        </div>
+        <div class="result" id="symResult"></div>
+    </div>
+</div>
+
+<script>
+/* ------------------------------ */
+/* AES-XTS 加密解密 */
+/* ------------------------------ */
+function gfMultiply(x) {
+    const bytes = new Uint8Array(16);
+    for (let i = 15; i >= 0; i--) { bytes[i] = Number(x & 0xffn); x >>= 8n; }
+    const res = new Uint8Array(16);
+    res[0] = (2*(bytes[0]%128)) ^ (135 * Math.floor(bytes[15]/128));
+    for(let k=1;k<16;k++) res[k] = (2*(bytes[k]%128)) ^ Math.floor(bytes[k-1]/128);
+    let r = 0n;
+    for(let b of res) r = (r<<8n)|BigInt(b);
+    return r;
+}
+
+class AES_XTS_NATIVE {
+    constructor(keyHex){
+        const kb = hexToBytes(keyHex);
+        if(kb.length!==32) throw new Error("XTS密钥必须64位HEX（32字节）");
+        this.k1 = kb.slice(0,16);
+        this.k2 = kb.slice(16,32);
+        this.aes1 = new aesjs.ModeOfOperation.ecb(this.k1);
+        this.aes2 = new aesjs.ModeOfOperation.ecb(this.k2);
+    }
+    encrypt(data, tweakHex){
+        let tweak = hexToBytes(tweakHex);
+        if(tweak.length!==16) throw new Error("Tweak必须32位HEX");
+        tweak = this.aes2.encrypt(tweak);
+        const blocks = [];
+        const count = Math.ceil(data.length/16);
+        for(let i=0;i<count;i++){
+            const b = new Uint8Array(16);
+            b.set(data.slice(i*16, Math.min(i*16+16, data.length)));
+            const x = b.map((v,j)=>v^tweak[j]);
+            const enc = this.aes1.encrypt(x);
+            const c = enc.map((v,j)=>v^tweak[j]);
+            blocks.push(...c);
+            const tbi = BigInt('0x'+bytesToHex(tweak));
+            const nt = gfMultiply(tbi);
+            const nb = new Uint8Array(16);
+            const nv = new DataView(nb.buffer);
+            nv.setBigUint64(0, (nt>>64n)&0xFFFFFFFFFFFFFFFFn, false);
+            nv.setBigUint64(8, nt&0xFFFFFFFFFFFFFFFFn, false);
+            tweak = nb;
+        }
+        return new Uint8Array(blocks);
+    }
+    decrypt(data, tweakHex){
+        let tweak = hexToBytes(tweakHex);
+        if(tweak.length!==16) throw new Error("Tweak必须32位HEX");
+        tweak = this.aes2.encrypt(tweak);
+        const blocks = [];
+        const count = Math.ceil(data.length/16);
+        for(let i=0;i<count;i++){
+            const b = new Uint8Array(16);
+            b.set(data.slice(i*16, Math.min(i*16+16, data.length)));
+            const x = b.map((v,j)=>v^tweak[j]);
+            const dec = this.aes1.decrypt(x);
+            const p = dec.map((v,j)=>v^tweak[j]);
+            blocks.push(...p);
+            const tbi = BigInt('0x'+bytesToHex(tweak));
+            const nt = gfMultiply(tbi);
+            const nb = new Uint8Array(16);
+            const nv = new DataView(nb.buffer);
+            nv.setBigUint64(0, (nt>>64n)&0xFFFFFFFFFFFFFFFFn, false);
+            nv.setBigUint64(8, nt&0xFFFFFFFFFFFFFFFFn, false);
+            tweak = nb;
+        }
+        const trimmed = blocks.slice(0, data.length);
+        return new Uint8Array(trimmed);
+    }
+}
+
+/* 存储AES-XTS加密/解密的二进制结果（用于下载Bin文件） */
+let symBinaryResult = null;
+
+/* ------------------------------ */
+/* AES-128-XTS 加密解密 */
+/* ------------------------------ */
+async function doSymEnc(){
+    const r = document.getElementById('symResult');
+    const mode = document.getElementById('symInputMode').value;
+    const key = document.getElementById('symKey').value.trim();
+    const tweak = document.getElementById('symIv').value.trim();
+    const val = document.getElementById('symInput').value.trim();
+    r.innerText="⏳ 加密中...";
+    try{
+        let data;
+        if(mode==='hex') data=hexToBytes(val);
+        else if(mode==='utf8') data=new TextEncoder().encode(val);
+        else if(mode==='base64') data=base64ToBytes(val);
+        else if(mode==='file') { /* 文件输入模式 */
+            const f = document.getElementById('symFileInput').files[0];
+            if (!f) throw new Error("请选择二进制文件");
+            data = await readFileAsUint8Array(f);
+        }
+
+        const xts = new AES_XTS_NATIVE(key);
+        const out = xts.encrypt(data, tweak);
+        symBinaryResult = out;
+        r.innerText=`✅ 完成\nHEX: ${bytesToHex(out)}\nBase64: ${bytesToBase64(out)}`;
+    }catch(e){ r.innerText="❌ 失败："+e.message; }
+}
+
+async function doSymDec(){
+    const r = document.getElementById('symResult');
+    const mode = document.getElementById('symInputMode').value;
+    const key = document.getElementById('symKey').value.trim();
+    const tweak = document.getElementById('symIv').value.trim();
+    const val = document.getElementById('symInput').value.trim();
+    r.innerText="⏳ 解密中...";
+    try{
+        let data;
+        if(mode==='hex') data=hexToBytes(val);
+        else if(mode==='base64') data=base64ToBytes(val);
+        else if(mode==='file') { /* 文件输入模式 */
+            const f = document.getElementById('symFileInput').files[0];
+            if (!f) throw new Error("请选择二进制文件");
+            data = await readFileAsUint8Array(f);
+        }
+        else throw new Error("密文请使用 HEX / Base64 / 文件输入");
+
+        const xts = new AES_XTS_NATIVE(key);
+        const out = xts.decrypt(data, tweak);
+        symBinaryResult = out; /*存储解密二进制结果*/
+        r.innerText=`✅ 完成\nHEX: ${bytesToHex(out)}\nBase64: ${bytesToBase64(out)}`;
+    }catch(e){ r.innerText="❌ 失败："+e.message; }
+}
+
+/* 下载AES-XTS二进制Bin文件 */
+function downloadSymBin(filename) {
+    if (!symBinaryResult) {
+        document.getElementById('symResult').innerText = "❌ 请先执行加密/解密";
+        return;
+    }
+    const blob = new Blob([symBinaryResult], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>

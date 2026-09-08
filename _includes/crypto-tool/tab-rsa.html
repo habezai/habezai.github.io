@@ -1,0 +1,27 @@
+<!-- RSA 非对称加密 -->
+<div id="rsa" class="tab-content">
+    <div class="section">
+        <div class="title">RSA 加密/解密</div>
+        <div class="btn-group">
+            <button class="btn" onclick="genRSA()">生成 RSA 2048</button>
+        </div>
+        <div class="label">公钥</div>
+        <textarea id="rsaPub" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        <div class="label">私钥</div>
+        <textarea id="rsaPriv" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        <div class="label">明文</div>
+        <textarea id="rsaPlain" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        <div class="btn-group">
+            <button class="btn" onclick="doRsaEnc()">公钥加密</button>
+            <button class="btn" onclick="doRsaDec()">私钥解密</button>
+        </div>
+        <div class="result" id="rsaResult"></div>
+    </div>
+</div>
+
+<script>
+/* RSA 工具 */
+function genRSA(){const k=forge.pki.rsa.generateKeyPair(2048);document.getElementById('rsaPub').value=forge.pki.publicKeyToPem(k.publicKey);document.getElementById('rsaPriv').value=forge.pki.privateKeyToPem(k.privateKey);}
+function doRsaEnc(){try{const p=forge.pki.publicKeyFromPem(document.getElementById('rsaPub').value);const o=p.encrypt(forge.util.encodeUtf8(document.getElementById('rsaPlain').value));document.getElementById('rsaResult').innerText=forge.util.bytesToHex(o);}catch(e){document.getElementById('rsaResult').innerText="❌ 加密失败："+e.message;}}
+function doRsaDec(){try{const p=forge.pki.privateKeyFromPem(document.getElementById('rsaPriv').value);const o=p.decrypt(forge.util.hexToBytes(document.getElementById('rsaPlain').value));document.getElementById('rsaResult').innerText=forge.util.decodeUtf8(o);}catch(e){document.getElementById('rsaResult').innerText="❌ 解密失败："+e.message;}}
+</script>

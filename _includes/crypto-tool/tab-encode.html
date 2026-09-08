@@ -1,0 +1,102 @@
+<!-- 编码互转 → 已完整升级：输入模式 + 文件输入 -->
+<div id="encode" class="tab-content">
+    <div class="section">
+        <div class="title">文本 / HEX / Base64 / Base64Url / UTF-8 互转（支持二进制文件）</div>
+
+        <div class="row">
+            <div class="col" style="max-width:140px;">
+                <div class="label">输入模式</div>
+                <select id="encInputMode">
+                    <option value="hex">HEX 模式</option>
+                    <option value="utf8">UTF-8 文本模式</option>
+                    <option value="base64">Base64 模式</option>
+                    <option value="file">二进制文件模式</option>
+                </select>
+            </div>
+            <div class="col">
+                <div id="encInputArea" style="display: block;">
+                    <div class="label">输入内容</div>
+                    <textarea id="encInput" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+                    <div class="error-hint" id="encErrorHint"></div>
+                </div>
+                <div id="encFileArea" style="display: none;">
+                    <div class="label">选择文件</div>
+                    <input type="file" id="encFileInput" class="file-input" />
+                    <div class="file-hint">读取原始二进制</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn" onclick="doEnc('hex')">转 HEX</button>
+            <button class="btn" onclick="doEnc('b64')">转 Base64</button>
+            <button class="btn" onclick="doEnc('b64url')">转 Base64Url</button>
+            <button class="btn" onclick="doEnc('utf8')">转 UTF-8</button>
+            <button class="btn btn-success" onclick="downloadEncBin()">下载转换结果Bin文件</button>
+        </div>
+        <div class="result" id="encResult"></div>
+    </div>
+</div>
+
+<script>
+/* 存储编码转换的二进制结果（用于下载Bin文件） */
+let encodeBinaryResult = null;
+
+/* 编码转换（新版：支持4种输入 → 任意输出） */
+async function doEnc(to) {
+    const res = document.getElementById('encResult');
+    res.innerText = "⏳ 转换中...";
+    try {
+        const mode = document.getElementById('encInputMode').value;
+        const val = document.getElementById('encInput').value.trim();
+        let bytes;
+
+        if (!validateEnc()) throw new Error("输入格式错误");
+
+        /* 输入模式 → 统一转为二进制 Uint8Array */
+        if (mode === 'hex') {
+            bytes = val ? hexToBytes(val) : new Uint8Array();
+        } else if (mode === 'utf8') {
+            bytes = new TextEncoder().encode(val);
+        } else if (mode === 'base64') {
+            bytes = val ? base64ToBytes(val) : new Uint8Array();
+        } else if (mode === 'file') {
+            const f = document.getElementById('encFileInput').files[0];
+            if (!f) throw new Error("请选择文件");
+            bytes = await readFileAsUint8Array(f);
+        }
+
+        /* 输出目标格式 */
+        let out;
+        switch (to) {
+            case 'hex': out = bytesToHex(bytes); break;
+            case 'b64': out = bytesToBase64(bytes); break;
+            case 'b64url': out = bytesToBase64Url(bytes); break;
+            case 'utf8': out = bytesToUtf8(bytes); break;
+            default: throw new Error("不支持的输出格式");
+        }
+
+        encodeBinaryResult = bytes; /* 存储编码转换的原始二进制结果 */
+
+        if (mode !== 'file') encHistory.add(val);
+        res.innerText = out;
+    } catch (e) {
+        res.innerText = "❌ 错误：" + e.message;
+    }
+}
+
+/* 下载编码转换结果的二进制Bin文件 */
+function downloadEncBin() {
+    if (!encodeBinaryResult) {
+        document.getElementById('encResult').innerText = "❌ 请先执行编码转换";
+        return;
+    }
+    const blob = new Blob([encodeBinaryResult], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "encode_result.bin"; /* 默认文件名 */
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>
