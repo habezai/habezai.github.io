@@ -1,0 +1,91 @@
+<!-- SM2 国密非对称加密 -->
+<div id="sm2" class="tab-content">
+    <div class="section">
+        <div class="title">SM2 国密椭圆曲线</div>
+        <div class="btn-group">
+            <button class="btn" onclick="genSM2Key()">生成 SM2 密钥对</button>
+        </div>
+        <div class="label">公钥 (04 + 64 + 64 HEX)</div>
+        <textarea id="sm2Pub" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        <div class="label">私钥 (64 HEX)</div>
+        <textarea id="sm2Priv" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        <div class="label">明文 / 密文 / 签名原文</div>
+        <textarea id="sm2Input" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        <div class="btn-group">
+            <button class="btn btn-success" onclick="doSm2Enc()">公钥加密</button>
+            <button class="btn btn-danger" onclick="doSm2Dec()">私钥解密</button>
+            <button class="btn" onclick="doSm2Sign()">签名</button>
+            <button class="btn" onclick="doSm2Verify()">验签</button>
+        </div>
+        <div class="result" id="sm2Result"></div>
+    </div>
+</div>
+
+<script>
+function genSM2Key() {
+    try {
+        const kp = sm2.generateKeyPairHex();
+        document.getElementById('sm2Pub').value = kp.publicKey;
+        document.getElementById('sm2Priv').value = kp.privateKey;
+        document.getElementById('sm2Result').innerText = '✅ 密钥对已生成';
+    } catch(e) {
+        document.getElementById('sm2Result').innerText = '❌ 生成失败：' + e.message;
+    }
+}
+
+function doSm2Enc() {
+    try {
+        const pub = document.getElementById('sm2Pub').value.trim();
+        const plain = document.getElementById('sm2Input').value.trim();
+        if (!pub) throw new Error('请先生成或输入公钥');
+        if (!plain) throw new Error('请输入明文');
+        const mode = 1; /* 1=C1C3C2, 0=C1C2C3 */
+        const cipher = sm2.doEncrypt(plain, pub, mode);
+        document.getElementById('sm2Result').innerText = cipher;
+    } catch(e) {
+        document.getElementById('sm2Result').innerText = '❌ 加密失败：' + e.message;
+    }
+}
+
+function doSm2Dec() {
+    try {
+        const priv = document.getElementById('sm2Priv').value.trim();
+        const cipher = document.getElementById('sm2Input').value.trim();
+        if (!priv) throw new Error('请先生成或输入私钥');
+        if (!cipher) throw new Error('请输入密文');
+        const mode = 1;
+        const plain = sm2.doDecrypt(cipher, priv, mode);
+        document.getElementById('sm2Result').innerText = plain;
+    } catch(e) {
+        document.getElementById('sm2Result').innerText = '❌ 解密失败：' + e.message;
+    }
+}
+
+function doSm2Sign() {
+    try {
+        const priv = document.getElementById('sm2Priv').value.trim();
+        const msg = document.getElementById('sm2Input').value.trim();
+        if (!priv) throw new Error('请先生成或输入私钥');
+        if (!msg) throw new Error('请输入签名原文');
+        const sig = sm2.doSignature(msg, priv, { hash: true, der: true });
+        document.getElementById('sm2Result').innerText = '签名值 (DER HEX):\n' + sig;
+    } catch(e) {
+        document.getElementById('sm2Result').innerText = '❌ 签名失败：' + e.message;
+    }
+}
+
+function doSm2Verify() {
+    try {
+        const pub = document.getElementById('sm2Pub').value.trim();
+        const input = document.getElementById('sm2Input').value.trim();
+        if (!pub) throw new Error('请输入公钥');
+        if (!input) throw new Error('请输入"签名原文|签名值"（用 | 分隔）');
+        const parts = input.split('|');
+        if (parts.length !== 2) throw new Error('格式：签名原文|签名值');
+        const ok = sm2.doVerifySignature(parts[0].trim(), parts[1].trim(), pub, { hash: true, der: true });
+        document.getElementById('sm2Result').innerText = ok ? '✅ 验签通过' : '❌ 验签失败';
+    } catch(e) {
+        document.getElementById('sm2Result').innerText = '❌ 验签错误：' + e.message;
+    }
+}
+</script>

@@ -1,0 +1,280 @@
+<!-- SM4 国密对称加密 -->
+<div id="sm4" class="tab-content">
+    <div class="section">
+        <div class="title">SM4 国密分组密码</div>
+
+        <div class="row">
+            <div class="col" style="max-width:140px;">
+                <div class="label">加密模式</div>
+                <select id="sm4Mode">
+                    <option value="ecb">ECB</option>
+                    <option value="cbc">CBC</option>
+                </select>
+            </div>
+            <div class="col" style="max-width:140px;">
+                <div class="label">填充方式</div>
+                <select id="sm4Padding">
+                    <option value="pkcs7">PKCS#7</option>
+                    <option value="none">None</option>
+                </select>
+            </div>
+            <div class="col" style="max-width:140px;">
+                <div class="label">输入模式</div>
+                <select id="sm4InputMode">
+                    <option value="utf8">UTF-8 文本</option>
+                    <option value="hex">HEX 模式</option>
+                    <option value="base64">Base64 模式</option>
+                    <option value="file">二进制文件模式</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="sm4InputArea" style="display: block;">
+            <div class="label">输入数据</div>
+            <textarea id="sm4Input" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        </div>
+        <div id="sm4FileArea" style="display: none;">
+            <div class="label">选择二进制文件</div>
+            <input type="file" id="sm4FileInput" class="file-input" />
+            <div class="file-hint">读取原始二进制数据</div>
+        </div>
+
+        <div class="label">密钥 (HEX) → 必须 32 位 (128-bit)</div>
+        <input id="sm4Key" spellcheck="false" autocorrect="off" autocapitalize="off" value="0123456789abcdeffedcba9876543210">
+        <div class="error-hint" id="sm4KeyError"></div>
+
+        <div id="sm4IvArea" style="display: none;">
+            <div class="label">IV (HEX) → 必须 32 位 (仅 CBC 模式)</div>
+            <input id="sm4Iv" spellcheck="false" autocorrect="off" autocapitalize="off" value="0123456789abcdeffedcba9876543210">
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-success" onclick="doSm4Enc()">加密</button>
+            <button class="btn btn-danger" onclick="doSm4Dec()">解密</button>
+            <button class="btn" onclick="downloadSm4Bin('sm4Result.bin')">下载输出结果Bin</button>
+        </div>
+        <div class="result" id="sm4Result"></div>
+    </div>
+</div>
+
+<script>
+var sm4BinaryResult = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const sm4ModeEl = document.getElementById('sm4Mode');
+    const sm4IvArea = document.getElementById('sm4IvArea');
+    if (sm4ModeEl && sm4IvArea) {
+        sm4ModeEl.addEventListener('change', function() {
+            sm4IvArea.style.display = this.value === 'cbc' ? 'block' : 'none';
+        });
+    }
+    const sm4InputMode = document.getElementById('sm4InputMode');
+    const sm4InputArea = document.getElementById('sm4InputArea');
+    const sm4FileArea = document.getElementById('sm4FileArea');
+    if (sm4InputMode && sm4InputArea && sm4FileArea) {
+        sm4InputMode.addEventListener('change', function() {
+            if (this.value === 'file') {
+                sm4InputArea.style.display = 'none';
+                sm4FileArea.style.display = 'block';
+            } else {
+                sm4InputArea.style.display = 'block';
+                sm4FileArea.style.display = 'none';
+            }
+        });
+    }
+});
+
+/* sm-crypto 独立文件(sm4.js)不含工具函数, 此处自行实现 */
+
+function _utf8ToHex(str) {
+    const arr = [];
+    for (let i = 0; i < str.length; i++) {
+        const code = str.charCodeAt(i);
+        if (code < 0x80) {
+            arr.push(code);
+        } else if (code < 0x800) {
+            arr.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f));
+        } else if (code < 0xd800 || code >= 0xe000) {
+            arr.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+        } else {
+            i++;
+            const c = 0x10000 + ((code & 0x3ff) << 10) + (str.charCodeAt(i) & 0x3ff);
+            arr.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 0x3f), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));
+        }
+    }
+    return arr.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function _hexToUtf8(hex) {
+    const bytes = hex.match(/.{2}/g) || [];
+    const arr = bytes.map(b => parseInt(b, 16));
+    let str = '';
+    let i = 0;
+    while (i < arr.length) {
+        const b = arr[i];
+        let code;
+        if (b < 0x80) {
+            code = b; i += 1;
+        } else if (b < 0xe0) {
+            code = ((b & 0x1f) << 6) | (arr[i + 1] & 0x3f); i += 2;
+        } else if (b < 0xf0) {
+            code = ((b & 0x0f) << 12) | ((arr[i + 1] & 0x3f) << 6) | (arr[i + 2] & 0x3f); i += 3;
+        } else {
+            code = ((b & 0x07) << 18) | ((arr[i + 1] & 0x3f) << 12) | ((arr[i + 2] & 0x3f) << 6) | (arr[i + 3] & 0x3f); i += 4;
+        }
+        str += String.fromCodePoint(code);
+    }
+    return str;
+}
+
+function _hexToBase64(hex) {
+    const bytes = hex.match(/.{2}/g) || [];
+    const binary = String.fromCharCode(...bytes.map(b => parseInt(b, 16)));
+    return btoa(binary);
+}
+
+function _base64ToHex(b64) {
+    const binary = atob(b64);
+    let hex = '';
+    for (let i = 0; i < binary.length; i++) {
+        hex += binary.charCodeAt(i).toString(16).padStart(2, '0');
+    }
+    return hex;
+}
+
+function _hexToStr(hex) {
+    const bytes = hex.match(/.{2}/g) || [];
+    return String.fromCharCode(...bytes.map(b => parseInt(b, 16)));
+}
+
+function _strToHex(str) {
+    let hex = '';
+    for (let i = 0; i < str.length; i++) {
+        hex += str.charCodeAt(i).toString(16).padStart(2, '0');
+    }
+    return hex;
+}
+
+/*
+ * sm4.encrypt(str, key, opts) 内部会调用 utf8ToHex(str) 把输入当 UTF-8 文本转 HEX。
+ * sm4.decrypt(cipherHex, key, opts) 内部会调用 hexToUtf8() 返回 UTF-8 字符串。
+ * 因此:
+ *   - 加密时，入参必须是原始 UTF-8 字符串，不能预先转 HEX。
+ *   - HEX 模式输入时，需要 _hexToStr() 还原为原始字符串再传入。
+ *   - Base64 模式输入时，需要 atob() 还原为原始字符串再传入。
+ *   - 解密时，sm4.decrypt() 返回的就是 UTF-8 字符串，要显示 HEX 需再转一次。
+ */
+
+async function doSm4Enc() {
+    const r = document.getElementById('sm4Result');
+    r.innerText = '\u23f3 加密中...';
+    try {
+        const mode = document.getElementById('sm4Mode').value;
+        const padding = document.getElementById('sm4Padding').value;
+        const inputMode = document.getElementById('sm4InputMode').value;
+        const key = document.getElementById('sm4Key').value.trim();
+        const val = document.getElementById('sm4Input').value.trim();
+
+        if (!/^[0-9a-fA-F]{32}$/.test(key)) throw new Error('密钥必须为 32 位 HEX');
+
+        let plainStr;
+        if (inputMode === 'utf8') {
+            plainStr = val;
+        } else if (inputMode === 'hex') {
+            if (padding === 'none' && val.length % 32 !== 0) {
+                throw new Error('None 填充模式下，HEX 明文长度必须是 32 的倍数 (16 字节对齐)，当前 ' + val.length + ' 位');
+            }
+            plainStr = _hexToStr(val);
+        } else if (inputMode === 'base64') {
+            plainStr = atob(val);
+        } else if (inputMode === 'file') {
+            const f = document.getElementById('sm4FileInput').files[0];
+            if (!f) throw new Error('请选择二进制文件');
+            const data = await readFileAsUint8Array(f);
+            const hex = bytesToHex(data);
+            if (padding === 'none' && hex.length % 32 !== 0) {
+                throw new Error('None 填充模式下，文件大小必须是 16 字节的倍数，当前 ' + data.length + ' 字节');
+            }
+            plainStr = _hexToStr(hex);
+        }
+
+        const opts = { mode: mode };
+        if (padding === 'none') opts.padding = 'none';
+        if (mode === 'cbc') {
+            const iv = document.getElementById('sm4Iv').value.trim();
+            if (!/^[0-9a-fA-F]{32}$/.test(iv)) throw new Error('IV 必须为 32 位 HEX');
+            opts.iv = iv;
+        }
+
+        const cipher = sm4.encrypt(plainStr, key, opts);
+        sm4BinaryResult = hexToBytes(cipher);
+        const padNote = padding === 'none' ? '\n(无填充)' : '\n(PKCS#7 填充)';
+        r.innerText = 'HEX: ' + cipher + '\nBase64: ' + _hexToBase64(cipher) + padNote;
+    } catch(e) {
+        r.innerText = '\u274c 加密失败：' + e.message;
+    }
+}
+
+async function doSm4Dec() {
+    const r = document.getElementById('sm4Result');
+    r.innerText = '\u23f3 解密中...';
+    try {
+        const mode = document.getElementById('sm4Mode').value;
+        const padding = document.getElementById('sm4Padding').value;
+        const inputMode = document.getElementById('sm4InputMode').value;
+        const key = document.getElementById('sm4Key').value.trim();
+        const val = document.getElementById('sm4Input').value.trim();
+
+        if (!/^[0-9a-fA-F]{32}$/.test(key)) throw new Error('密钥必须为 32 位 HEX');
+
+        let cipherHex;
+        if (inputMode === 'hex') {
+            cipherHex = val;
+            if (padding === 'none' && cipherHex.length % 32 !== 0) {
+                throw new Error('None 填充模式下，HEX 密文长度必须是 32 的倍数 (16 字节对齐)，当前 ' + cipherHex.length + ' 位');
+            }
+        } else if (inputMode === 'base64') {
+            cipherHex = _base64ToHex(val);
+        } else if (inputMode === 'file') {
+            const f = document.getElementById('sm4FileInput').files[0];
+            if (!f) throw new Error('请选择二进制文件');
+            const data = await readFileAsUint8Array(f);
+            cipherHex = bytesToHex(data);
+            if (padding === 'none' && cipherHex.length % 32 !== 0) {
+                throw new Error('None 填充模式下，密文文件大小必须是 16 字节的倍数，当前 ' + data.length + ' 字节');
+            }
+        } else {
+            throw new Error('密文请使用 HEX / Base64 / 文件模式输入');
+        }
+
+        const opts = { mode: mode };
+        if (padding === 'none') opts.padding = 'none';
+        if (mode === 'cbc') {
+            const iv = document.getElementById('sm4Iv').value.trim();
+            if (!/^[0-9a-fA-F]{32}$/.test(iv)) throw new Error('IV 必须为 32 位 HEX');
+            opts.iv = iv;
+        }
+
+        const plainText = sm4.decrypt(cipherHex, key, opts);
+        sm4BinaryResult = hexToBytes(_strToHex(plainText));
+        const padNote = padding === 'none' ? '\n(无填充)' : '\n(PKCS#7 填充)';
+        r.innerText = 'HEX: ' + _utf8ToHex(plainText) + '\nUTF-8: ' + plainText + padNote;
+    } catch(e) {
+        r.innerText = '\u274c 解密失败：' + e.message;
+    }
+}
+
+function downloadSm4Bin(filename) {
+    if (!sm4BinaryResult) {
+        document.getElementById('sm4Result').innerText = '\u274c 请先执行加密/解密';
+        return;
+    }
+    const blob = new Blob([sm4BinaryResult], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>

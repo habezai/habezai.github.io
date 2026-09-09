@@ -12,7 +12,9 @@ nav:false
     <div class="tab active" onclick="showTab('hash')">哈希</div>
     <div class="tab" onclick="showTab('hmac')">HMAC</div>
     <div class="tab" onclick="showTab('aes')">AES-XTS</div>
-    <div class="tab" onclick="showTab('rsa')">RSA</div>
+    <div class="tab" onclick="showTab('rsa')">*RSA</div>
+    <div class="tab" onclick="showTab('sm2')">*SM2</div>
+    <div class="tab" onclick="showTab('sm4')">SM4</div>
     <div class="tab" onclick="showTab('random')">随机数</div>
     <div class="tab" onclick="showTab('encode')">编码</div>
 </div>
@@ -24,6 +26,10 @@ nav:false
 {% include crypto-tool/tab-aes.html %}
 
 {% include crypto-tool/tab-rsa.html %}
+
+{% include crypto-tool/tab-sm2.html %}
+
+{% include crypto-tool/tab-sm4.html %}
 
 {% include crypto-tool/tab-random.html %}
 

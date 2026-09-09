@@ -217,7 +217,7 @@ function validateSym() {
 
 /* 标签页切换 */
 function showTab(tabName) {
-    const tabMap = { hash:'哈希', hmac:'HMAC', aes:'AES-XTS', rsa:'RSA', random:'随机数', encode:'编码' };
+    const tabMap = { hash:'哈希', hmac:'HMAC', aes:'AES-XTS', rsa:'RSA', sm2:'SM2', sm4:'SM4', random:'随机数', encode:'编码' };
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     const tar = document.getElementById(tabName); if (tar) tar.classList.add('active');
