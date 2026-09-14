@@ -333,6 +333,63 @@ function _sm4DecryptRaw(cipherHex, keyHex, mode, hasPadding, ivHex) {
     return hex;
 }
 
+function _sm4EncryptRaw(plainHex, keyHex, mode, hasPadding, ivHex) {
+    if (hasPadding) {
+        var plainBytes = hexToBytes(plainHex);
+        var padLen = 16 - (plainBytes.length % 16);
+        if (padLen === 0) padLen = 16;
+        for (var p = 0; p < padLen; p++) plainHex += padLen.toString(16).padStart(2, '0');
+    }
+    var rk = _sm4KeySchedule(hexToBytes(keyHex));
+    var plainWords = _sm4WordsFromHex(plainHex);
+    var numBlocks = plainWords.length / 4;
+    var result = [];
+    var ivWords = ivHex ? _sm4WordsFromHex(ivHex) : null;
+    var i, block, enc, cipher;
+    if (mode === 'ecb') {
+        for (i = 0; i < numBlocks; i++) {
+            block = plainWords.slice(i*4, i*4+4);
+            cipher = _sm4EncBlock(block.slice(), rk);
+            result.push.apply(result, cipher);
+        }
+    } else if (mode === 'cbc') {
+        var prev = ivWords;
+        for (i = 0; i < numBlocks; i++) {
+            block = plainWords.slice(i*4, i*4+4);
+            cipher = _sm4EncBlock(_sm4Xor(block, prev).slice(), rk);
+            result.push.apply(result, cipher);
+            prev = cipher;
+        }
+    } else if (mode === 'cfb') {
+        var sr = ivWords;
+        for (i = 0; i < numBlocks; i++) {
+            block = plainWords.slice(i*4, i*4+4);
+            enc = _sm4EncBlock(sr.slice(), rk);
+            cipher = _sm4Xor(block, enc);
+            result.push.apply(result, cipher);
+            sr = cipher;
+        }
+    } else if (mode === 'ofb') {
+        var ofbSr = ivWords;
+        for (i = 0; i < numBlocks; i++) {
+            ofbSr = _sm4EncBlock(ofbSr.slice(), rk);
+            block = plainWords.slice(i*4, i*4+4);
+            cipher = _sm4Xor(block, ofbSr);
+            result.push.apply(result, cipher);
+        }
+    } else if (mode === 'ctr') {
+        var ctr = ivWords;
+        for (i = 0; i < numBlocks; i++) {
+            var keystream = _sm4EncBlock(ctr.slice(), rk);
+            block = plainWords.slice(i*4, i*4+4);
+            cipher = _sm4Xor(block, keystream);
+            result.push.apply(result, cipher);
+            ctr = _sm4IncCtr(ctr);
+        }
+    }
+    return _sm4WordsToHex(result);
+}
+
 async function doSm4Enc() {
     const r = document.getElementById('sm4Result');
     r.innerText = '\u23f3 加密中...';
@@ -345,34 +402,30 @@ async function doSm4Enc() {
 
         if (!/^[0-9a-fA-F]{32}$/.test(key)) throw new Error('密钥必须为 32 位 HEX');
 
-        let msg;
+        const iv = (mode !== 'ecb') ? document.getElementById('sm4Iv').value.trim() : '';
+        if (mode !== 'ecb' && !/^[0-9a-fA-F]{32}$/.test(iv)) throw new Error('IV 必须为 32 位 HEX');
+
+        let plainHex;
         if (inputMode === 'utf8') {
-            msg = val;
+            plainHex = _utf8ToHex(val);
         } else if (inputMode === 'hex') {
-            if (padding === 'none' && val.length % 32 !== 0) {
-                throw new Error('None 填充模式下，HEX 明文长度必须是 32 的倍数 (16 字节对齐)，当前 ' + val.length + ' 位');
+            plainHex = val;
+            if (padding === 'none' && plainHex.length % 32 !== 0) {
+                throw new Error('None 填充模式下，HEX 明文长度必须是 32 的倍数 (16 字节对齐)，当前 ' + plainHex.length + ' 位');
             }
-            msg = hexToBytes(val);
         } else if (inputMode === 'base64') {
-            msg = base64ToBytes(val);
+            plainHex = bytesToHex(base64ToBytes(val));
         } else if (inputMode === 'file') {
             const f = document.getElementById('sm4FileInput').files[0];
             if (!f) throw new Error('请选择二进制文件');
-            msg = await readFileAsUint8Array(f);
-            if (padding === 'none' && msg.length % 16 !== 0) {
-                throw new Error('None 填充模式下，文件大小必须是 16 字节的倍数，当前 ' + msg.length + ' 字节');
+            const data = await readFileAsUint8Array(f);
+            plainHex = bytesToHex(data);
+            if (padding === 'none' && plainHex.length % 32 !== 0) {
+                throw new Error('None 填充模式下，文件大小必须是 16 字节的倍数，当前 ' + data.length + ' 字节');
             }
         }
 
-        const opts = { mode: mode };
-        if (padding === 'none') opts.padding = 'none';
-        if (mode !== 'ecb') {
-            const iv = document.getElementById('sm4Iv').value.trim();
-            if (!/^[0-9a-fA-F]{32}$/.test(iv)) throw new Error('IV 必须为 32 位 HEX');
-            opts.iv = iv;
-        }
-
-        const cipher = sm4.encrypt(msg, key, opts);
+        const cipher = _sm4EncryptRaw(plainHex, key, mode, padding !== 'none', iv);
         sm4BinaryResult = hexToBytes(cipher);
         const padNote = padding === 'none' ? '\n(无填充)' : '\n(PKCS#7 填充)';
         r.innerText = 'HEX: ' + cipher + '\nBase64: ' + _hexToBase64(cipher) + padNote;
