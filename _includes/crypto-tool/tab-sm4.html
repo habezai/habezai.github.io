@@ -87,8 +87,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-/* sm-crypto 独立文件(sm4.js)不含工具函数, 此处自行实现 */
-
 function _utf8ToHex(str) {
     const arr = [];
     for (let i = 0; i < str.length; i++) {
@@ -158,14 +156,7 @@ function _strToHex(str) {
     return hex;
 }
 
-/*
- * sm4.encrypt(msg, key, opts):
- *   - msg 为字符串时: 库内部 utf8ToHex(msg) → 适用于 UTF-8 文本输入
- *   - msg 为 Uint8Array 时: 库内部 bytesToHex(msg) → 适用于二进制/HEX/Base64 输入 (无编码损失)
- * sm4.decrypt(cipherHex, key, opts): 内部解密后调用 hexToUtf8(), 返回 UTF-8 字符串
- *   - 当解密结果为非 UTF-8 字节时, hexToUtf8() 会抛出异常 (Invalid code point)
- *   - 因此自实现 raw SM4 解密, 直接返回 hex, 避免 UTF-8 转换问题
- */
+/* SM4 原生实现，覆盖 ECB/CBC/CFB/OFB/CTR 全部 5 种模式 */
 
 var _sm4Sbox = [
     0xd6,0x90,0xe9,0xfe,0xcc,0xe1,0x3d,0xb7,0x16,0xb6,0x14,0xc2,0x28,0xfb,0x2c,0x05,
