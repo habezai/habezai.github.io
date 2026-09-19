@@ -14,7 +14,7 @@
                     <option value="ctr">CTR</option>
                 </select>
             </div>
-            <div class="col" style="max-width:140px;">
+            <div class="col" style="max-width:140px;" id="sm4PaddingArea">
                 <div class="label">填充方式</div>
                 <select id="sm4Padding">
                     <option value="pkcs7">PKCS#7</option>
@@ -66,10 +66,15 @@ var sm4BinaryResult = null;
 document.addEventListener('DOMContentLoaded', function() {
     const sm4ModeEl = document.getElementById('sm4Mode');
     const sm4IvArea = document.getElementById('sm4IvArea');
-    if (sm4ModeEl && sm4IvArea) {
-        sm4ModeEl.addEventListener('change', function() {
-            sm4IvArea.style.display = this.value === 'ecb' ? 'none' : 'block';
-        });
+    const sm4PaddingArea = document.getElementById('sm4PaddingArea');
+    if (sm4ModeEl) {
+        function syncPaddingAndIv() {
+            var isCtr = sm4ModeEl.value === 'ctr';
+            if (sm4IvArea) sm4IvArea.style.display = (sm4ModeEl.value === 'ecb') ? 'none' : 'block';
+            if (sm4PaddingArea) sm4PaddingArea.style.display = isCtr ? 'none' : '';
+        }
+        sm4ModeEl.addEventListener('change', syncPaddingAndIv);
+        syncPaddingAndIv();
     }
     const sm4InputMode = document.getElementById('sm4InputMode');
     const sm4InputArea = document.getElementById('sm4InputArea');
@@ -257,6 +262,30 @@ function _sm4IncCtr(ctr) {
     return r;
 }
 
+/* CTR 模式字节级处理：支持任意长度明文，最后一块自动截断 */
+function _sm4CtrCrypt(dataHex, keyHex, ivHex) {
+    var rk = _sm4KeySchedule(hexToBytes(keyHex));
+    var dataBytes = hexToBytes(dataHex);
+    var totalLen = dataBytes.length;
+    var result = new Uint8Array(totalLen);
+    var ctr = _sm4WordsFromHex(ivHex);
+    var offset = 0;
+
+    while (offset < totalLen) {
+        var keystreamWords = _sm4EncBlock(ctr.slice(), rk);
+        var chunkLen = Math.min(16, totalLen - offset);
+        for (var j = 0; j < chunkLen; j++) {
+            var wordIdx = j >>> 2;
+            var byteShift = (3 - (j & 3)) * 8;
+            var keyByte = (keystreamWords[wordIdx] >>> byteShift) & 0xff;
+            result[offset + j] = dataBytes[offset + j] ^ keyByte;
+        }
+        offset += chunkLen;
+        ctr = _sm4IncCtr(ctr);
+    }
+    return bytesToHex(result);
+}
+
 function _sm4DecryptRaw(cipherHex, keyHex, mode, hasPadding, ivHex) {
     var rk = _sm4KeySchedule(hexToBytes(keyHex));
     var cipherWords = _sm4WordsFromHex(cipherHex);
@@ -298,19 +327,12 @@ function _sm4DecryptRaw(cipherHex, keyHex, mode, hasPadding, ivHex) {
             result.push.apply(result, plain);
         }
     } else if (mode === 'ctr') {
-        var ctr = ivWords;
-        for (i = 0; i < numBlocks; i++) {
-            var keystream = _sm4EncBlock(ctr.slice(), rk);
-            block = cipherWords.slice(i*4, i*4+4);
-            plain = _sm4Xor(block, keystream);
-            result.push.apply(result, plain);
-            ctr = _sm4IncCtr(ctr);
-        }
+        return _sm4CtrCrypt(cipherHex, keyHex, ivHex);
     }
 
     var hex = _sm4WordsToHex(result);
 
-    if (hasPadding && hex.length >= 2) {
+    if (hasPadding && mode !== 'ctr' && hex.length >= 2) {
         var lastByte = parseInt(hex.substr(hex.length - 2, 2), 16);
         if (lastByte > 0 && lastByte <= 16 && lastByte * 2 <= hex.length) {
             var valid = true;
@@ -325,6 +347,9 @@ function _sm4DecryptRaw(cipherHex, keyHex, mode, hasPadding, ivHex) {
 }
 
 function _sm4EncryptRaw(plainHex, keyHex, mode, hasPadding, ivHex) {
+    if (mode === 'ctr') {
+        return _sm4CtrCrypt(plainHex, keyHex, ivHex);
+    }
     if (hasPadding) {
         var plainBytes = hexToBytes(plainHex);
         var padLen = 16 - (plainBytes.length % 16);
@@ -368,15 +393,6 @@ function _sm4EncryptRaw(plainHex, keyHex, mode, hasPadding, ivHex) {
             cipher = _sm4Xor(block, ofbSr);
             result.push.apply(result, cipher);
         }
-    } else if (mode === 'ctr') {
-        var ctr = ivWords;
-        for (i = 0; i < numBlocks; i++) {
-            var keystream = _sm4EncBlock(ctr.slice(), rk);
-            block = plainWords.slice(i*4, i*4+4);
-            cipher = _sm4Xor(block, keystream);
-            result.push.apply(result, cipher);
-            ctr = _sm4IncCtr(ctr);
-        }
     }
     return _sm4WordsToHex(result);
 }
@@ -401,7 +417,7 @@ async function doSm4Enc() {
             plainHex = _utf8ToHex(val);
         } else if (inputMode === 'hex') {
             plainHex = val;
-            if (padding === 'none' && plainHex.length % 32 !== 0) {
+            if (padding === 'none' && mode !== 'ctr' && plainHex.length % 32 !== 0) {
                 throw new Error('None 填充模式下，HEX 明文长度必须是 32 的倍数 (16 字节对齐)，当前 ' + plainHex.length + ' 位');
             }
         } else if (inputMode === 'base64') {
@@ -411,7 +427,7 @@ async function doSm4Enc() {
             if (!f) throw new Error('请选择二进制文件');
             const data = await readFileAsUint8Array(f);
             plainHex = bytesToHex(data);
-            if (padding === 'none' && plainHex.length % 32 !== 0) {
+            if (padding === 'none' && mode !== 'ctr' && plainHex.length % 32 !== 0) {
                 throw new Error('None 填充模式下，文件大小必须是 16 字节的倍数，当前 ' + data.length + ' 字节');
             }
         }
@@ -440,7 +456,7 @@ async function doSm4Dec() {
         let cipherHex;
         if (inputMode === 'hex') {
             cipherHex = val;
-            if (padding === 'none' && cipherHex.length % 32 !== 0) {
+            if (padding === 'none' && mode !== 'ctr' && cipherHex.length % 32 !== 0) {
                 throw new Error('None 填充模式下，HEX 密文长度必须是 32 的倍数 (16 字节对齐)，当前 ' + cipherHex.length + ' 位');
             }
         } else if (inputMode === 'base64') {
@@ -450,7 +466,7 @@ async function doSm4Dec() {
             if (!f) throw new Error('请选择二进制文件');
             const data = await readFileAsUint8Array(f);
             cipherHex = bytesToHex(data);
-            if (padding === 'none' && cipherHex.length % 32 !== 0) {
+            if (padding === 'none' && mode !== 'ctr' && cipherHex.length % 32 !== 0) {
                 throw new Error('None 填充模式下，密文文件大小必须是 16 字节的倍数，当前 ' + data.length + ' 字节');
             }
         } else {
