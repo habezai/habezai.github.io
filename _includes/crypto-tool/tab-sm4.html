@@ -69,9 +69,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const sm4PaddingArea = document.getElementById('sm4PaddingArea');
     if (sm4ModeEl) {
         function syncPaddingAndIv() {
-            var isCtr = sm4ModeEl.value === 'ctr';
+            var noPad = sm4ModeEl.value === 'ctr' || sm4ModeEl.value === 'ofb' || sm4ModeEl.value === 'cfb';
             if (sm4IvArea) sm4IvArea.style.display = (sm4ModeEl.value === 'ecb') ? 'none' : 'block';
-            if (sm4PaddingArea) sm4PaddingArea.style.display = isCtr ? 'none' : '';
+            if (sm4PaddingArea) sm4PaddingArea.style.display = noPad ? 'none' : '';
         }
         sm4ModeEl.addEventListener('change', syncPaddingAndIv);
         syncPaddingAndIv();
@@ -286,6 +286,90 @@ function _sm4CtrCrypt(dataHex, keyHex, ivHex) {
     return bytesToHex(result);
 }
 
+/* OFB 模式字节级处理：密钥流独立生成，支持任意长度，最后一块自动截断 */
+function _sm4OfbCrypt(dataHex, keyHex, ivHex) {
+    var rk = _sm4KeySchedule(hexToBytes(keyHex));
+    var dataBytes = hexToBytes(dataHex);
+    var totalLen = dataBytes.length;
+    var result = new Uint8Array(totalLen);
+    var sr = _sm4WordsFromHex(ivHex);
+    var offset = 0;
+
+    while (offset < totalLen) {
+        sr = _sm4EncBlock(sr.slice(), rk);
+        var chunkLen = Math.min(16, totalLen - offset);
+        for (var j = 0; j < chunkLen; j++) {
+            var wordIdx = j >>> 2;
+            var byteShift = (3 - (j & 3)) * 8;
+            var keyByte = (sr[wordIdx] >>> byteShift) & 0xff;
+            result[offset + j] = dataBytes[offset + j] ^ keyByte;
+        }
+        offset += chunkLen;
+    }
+    return bytesToHex(result);
+}
+
+/* CFB 模式字节级处理：支持任意长度，最后一块自动截断且不移位寄存器 */
+function _sm4CfbEncrypt(plainHex, keyHex, ivHex) {
+    var rk = _sm4KeySchedule(hexToBytes(keyHex));
+    var plainBytes = hexToBytes(plainHex);
+    var totalLen = plainBytes.length;
+    var result = new Uint8Array(totalLen);
+    var sr = _sm4WordsFromHex(ivHex);
+    var offset = 0;
+
+    while (offset < totalLen) {
+        var ks = _sm4EncBlock(sr.slice(), rk);
+        var chunkLen = Math.min(16, totalLen - offset);
+        for (var j = 0; j < chunkLen; j++) {
+            var wordIdx = j >>> 2;
+            var byteShift = (3 - (j & 3)) * 8;
+            var keyByte = (ks[wordIdx] >>> byteShift) & 0xff;
+            result[offset + j] = plainBytes[offset + j] ^ keyByte;
+        }
+        if (chunkLen === 16) {
+            sr = [
+                (result[offset] << 24) | (result[offset+1] << 16) | (result[offset+2] << 8) | result[offset+3],
+                (result[offset+4] << 24) | (result[offset+5] << 16) | (result[offset+6] << 8) | result[offset+7],
+                (result[offset+8] << 24) | (result[offset+9] << 16) | (result[offset+10] << 8) | result[offset+11],
+                (result[offset+12] << 24) | (result[offset+13] << 16) | (result[offset+14] << 8) | result[offset+15]
+            ].map(function(x) { return x >>> 0; });
+        }
+        offset += chunkLen;
+    }
+    return bytesToHex(result);
+}
+
+function _sm4CfbDecrypt(cipherHex, keyHex, ivHex) {
+    var rk = _sm4KeySchedule(hexToBytes(keyHex));
+    var cipherBytes = hexToBytes(cipherHex);
+    var totalLen = cipherBytes.length;
+    var result = new Uint8Array(totalLen);
+    var sr = _sm4WordsFromHex(ivHex);
+    var offset = 0;
+
+    while (offset < totalLen) {
+        var ks = _sm4EncBlock(sr.slice(), rk);
+        var chunkLen = Math.min(16, totalLen - offset);
+        for (var j = 0; j < chunkLen; j++) {
+            var wordIdx = j >>> 2;
+            var byteShift = (3 - (j & 3)) * 8;
+            var keyByte = (ks[wordIdx] >>> byteShift) & 0xff;
+            result[offset + j] = cipherBytes[offset + j] ^ keyByte;
+        }
+        if (chunkLen === 16) {
+            sr = [
+                (cipherBytes[offset] << 24) | (cipherBytes[offset+1] << 16) | (cipherBytes[offset+2] << 8) | cipherBytes[offset+3],
+                (cipherBytes[offset+4] << 24) | (cipherBytes[offset+5] << 16) | (cipherBytes[offset+6] << 8) | cipherBytes[offset+7],
+                (cipherBytes[offset+8] << 24) | (cipherBytes[offset+9] << 16) | (cipherBytes[offset+10] << 8) | cipherBytes[offset+11],
+                (cipherBytes[offset+12] << 24) | (cipherBytes[offset+13] << 16) | (cipherBytes[offset+14] << 8) | cipherBytes[offset+15]
+            ].map(function(x) { return x >>> 0; });
+        }
+        offset += chunkLen;
+    }
+    return bytesToHex(result);
+}
+
 function _sm4DecryptRaw(cipherHex, keyHex, mode, hasPadding, ivHex) {
     var rk = _sm4KeySchedule(hexToBytes(keyHex));
     var cipherWords = _sm4WordsFromHex(cipherHex);
@@ -319,20 +403,16 @@ function _sm4DecryptRaw(cipherHex, keyHex, mode, hasPadding, ivHex) {
             sr = block;
         }
     } else if (mode === 'ofb') {
-        var ofbSr = ivWords;
-        for (i = 0; i < numBlocks; i++) {
-            ofbSr = _sm4EncBlock(ofbSr.slice(), rk);
-            block = cipherWords.slice(i*4, i*4+4);
-            plain = _sm4Xor(block, ofbSr);
-            result.push.apply(result, plain);
-        }
+        return _sm4OfbCrypt(cipherHex, keyHex, ivHex);
+    } else if (mode === 'cfb') {
+        return _sm4CfbDecrypt(cipherHex, keyHex, ivHex);
     } else if (mode === 'ctr') {
         return _sm4CtrCrypt(cipherHex, keyHex, ivHex);
     }
 
     var hex = _sm4WordsToHex(result);
 
-    if (hasPadding && mode !== 'ctr' && hex.length >= 2) {
+    if (hasPadding && mode !== 'ctr' && mode !== 'ofb' && mode !== 'cfb' && hex.length >= 2) {
         var lastByte = parseInt(hex.substr(hex.length - 2, 2), 16);
         if (lastByte > 0 && lastByte <= 16 && lastByte * 2 <= hex.length) {
             var valid = true;
@@ -349,6 +429,12 @@ function _sm4DecryptRaw(cipherHex, keyHex, mode, hasPadding, ivHex) {
 function _sm4EncryptRaw(plainHex, keyHex, mode, hasPadding, ivHex) {
     if (mode === 'ctr') {
         return _sm4CtrCrypt(plainHex, keyHex, ivHex);
+    }
+    if (mode === 'ofb') {
+        return _sm4OfbCrypt(plainHex, keyHex, ivHex);
+    }
+    if (mode === 'cfb') {
+        return _sm4CfbEncrypt(plainHex, keyHex, ivHex);
     }
     if (hasPadding) {
         var plainBytes = hexToBytes(plainHex);
@@ -376,23 +462,6 @@ function _sm4EncryptRaw(plainHex, keyHex, mode, hasPadding, ivHex) {
             result.push.apply(result, cipher);
             prev = cipher;
         }
-    } else if (mode === 'cfb') {
-        var sr = ivWords;
-        for (i = 0; i < numBlocks; i++) {
-            block = plainWords.slice(i*4, i*4+4);
-            enc = _sm4EncBlock(sr.slice(), rk);
-            cipher = _sm4Xor(block, enc);
-            result.push.apply(result, cipher);
-            sr = cipher;
-        }
-    } else if (mode === 'ofb') {
-        var ofbSr = ivWords;
-        for (i = 0; i < numBlocks; i++) {
-            ofbSr = _sm4EncBlock(ofbSr.slice(), rk);
-            block = plainWords.slice(i*4, i*4+4);
-            cipher = _sm4Xor(block, ofbSr);
-            result.push.apply(result, cipher);
-        }
     }
     return _sm4WordsToHex(result);
 }
@@ -417,7 +486,7 @@ async function doSm4Enc() {
             plainHex = _utf8ToHex(val);
         } else if (inputMode === 'hex') {
             plainHex = val;
-            if (padding === 'none' && mode !== 'ctr' && plainHex.length % 32 !== 0) {
+            if (padding === 'none' && mode !== 'ctr' && mode !== 'ofb' && mode !== 'cfb' && plainHex.length % 32 !== 0) {
                 throw new Error('None 填充模式下，HEX 明文长度必须是 32 的倍数 (16 字节对齐)，当前 ' + plainHex.length + ' 位');
             }
         } else if (inputMode === 'base64') {
@@ -427,7 +496,7 @@ async function doSm4Enc() {
             if (!f) throw new Error('请选择二进制文件');
             const data = await readFileAsUint8Array(f);
             plainHex = bytesToHex(data);
-            if (padding === 'none' && mode !== 'ctr' && plainHex.length % 32 !== 0) {
+            if (padding === 'none' && mode !== 'ctr' && mode !== 'ofb' && mode !== 'cfb' && plainHex.length % 32 !== 0) {
                 throw new Error('None 填充模式下，文件大小必须是 16 字节的倍数，当前 ' + data.length + ' 字节');
             }
         }
@@ -456,7 +525,7 @@ async function doSm4Dec() {
         let cipherHex;
         if (inputMode === 'hex') {
             cipherHex = val;
-            if (padding === 'none' && mode !== 'ctr' && cipherHex.length % 32 !== 0) {
+            if (padding === 'none' && mode !== 'ctr' && mode !== 'ofb' && mode !== 'cfb' && cipherHex.length % 32 !== 0) {
                 throw new Error('None 填充模式下，HEX 密文长度必须是 32 的倍数 (16 字节对齐)，当前 ' + cipherHex.length + ' 位');
             }
         } else if (inputMode === 'base64') {
@@ -466,7 +535,7 @@ async function doSm4Dec() {
             if (!f) throw new Error('请选择二进制文件');
             const data = await readFileAsUint8Array(f);
             cipherHex = bytesToHex(data);
-            if (padding === 'none' && mode !== 'ctr' && cipherHex.length % 32 !== 0) {
+            if (padding === 'none' && mode !== 'ctr' && mode !== 'ofb' && mode !== 'cfb' && cipherHex.length % 32 !== 0) {
                 throw new Error('None 填充模式下，密文文件大小必须是 16 字节的倍数，当前 ' + data.length + ' 字节');
             }
         } else {
